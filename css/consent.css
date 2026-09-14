@@ -1,0 +1,404 @@
+/* =========================================================
+   PHASE 2 — HUFA COOKIE & PRIVACY CONSENT STYLES
+   =========================================================
+   Isolated, prefixed (.hufa-consent-*) stylesheet so nothing
+   in the existing design system can be affected.
+
+   Mobile-first: full-width bottom sheet on phones, compact
+   card bottom-LEFT on desktop (the AI advisor occupies the
+   bottom-right corner, toasts appear top-right).
+
+   Palette mirrors the HUFA theme:
+     text      #0A192F
+     muted     #4A5D74
+     accent    #E48A2F
+     borders   #D5E0EC / rgba(10,25,47,.08)
+   ========================================================= */
+
+/* ---------- BANNER ---------- */
+
+.hufa-consent-banner {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 90000;
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 18px 16px calc(18px + env(safe-area-inset-bottom, 0px));
+    background: #ffffff;
+    border: 1px solid rgba(10, 25, 47, 0.08);
+    border-bottom: 0;
+    border-radius: 20px 20px 0 0;
+    box-shadow: 0 -12px 40px rgba(10, 25, 47, 0.14);
+    font-family: "Manrope", system-ui, -apple-system, sans-serif;
+    color: #0A192F;
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity .28s ease, transform .28s ease
+}
+
+.hufa-consent-banner.is-visible {
+    opacity: 1;
+    transform: translateY(0)
+}
+
+.hufa-consent-banner.is-hiding {
+    opacity: 0;
+    transform: translateY(16px)
+}
+
+/* Head row */
+.hufa-consent-banner-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px
+}
+
+.hufa-consent-banner-head svg {
+    flex-shrink: 0;
+    color: #E48A2F
+}
+
+.hufa-consent-title {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    color: #0A192F
+}
+
+/* Body copy */
+.hufa-consent-text {
+    margin: 0 0 14px;
+    font-size: 13px;
+    line-height: 1.55;
+    color: #4A5D74
+}
+
+/* Action row — two 44px+ buttons side by side, thumb friendly */
+.hufa-consent-actions {
+    display: flex;
+    gap: 10px
+}
+
+.hufa-consent-btn {
+    flex: 1 1 0;
+    min-height: 46px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 700;
+    line-height: 1.2;
+    cursor: pointer;
+    transition: transform .18s ease, box-shadow .18s ease, background-color .18s ease, border-color .18s ease;
+    -webkit-tap-highlight-color: transparent
+}
+
+.hufa-consent-btn-primary {
+    border: 1px solid transparent;
+    background: linear-gradient(135deg, #E48A2F, #E3C989);
+    color: #08111F;
+    box-shadow: 0 10px 24px rgba(228, 138, 47, 0.28)
+}
+
+.hufa-consent-btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 30px rgba(228, 138, 47, 0.34)
+}
+
+.hufa-consent-btn-secondary {
+    border: 1px solid #D5E0EC;
+    background: #ffffff;
+    color: #0A192F
+}
+
+.hufa-consent-btn-secondary:hover {
+    border-color: #E48A2F;
+    color: #E48A2F
+}
+
+/* Manage preferences — quiet full-width text button */
+.hufa-consent-manage {
+    display: block;
+    width: 100%;
+    margin-top: 12px;
+    padding: 10px 0 0;
+    border: 0;
+    border-top: 1px solid rgba(10, 25, 47, 0.08);
+    background: transparent;
+    font-family: inherit;
+    font-size: 12.5px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: #0A192F;
+    text-align: center;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent
+}
+
+.hufa-consent-manage:hover {
+    color: #E48A2F;
+    text-decoration: underline
+}
+
+/* Desktop — compact card, bottom-left (AI advisor is bottom-right) */
+@media (min-width: 640px) {
+
+    .hufa-consent-banner {
+        left: 20px;
+        right: auto;
+        bottom: 20px;
+        width: 400px;
+        max-width: calc(100vw - 40px);
+        padding: 20px;
+        border: 1px solid rgba(10, 25, 47, 0.08);
+        border-radius: 20px;
+        box-shadow: 0 24px 60px rgba(10, 25, 47, 0.18)
+    }
+
+}
+
+/* =========================================================
+   PREFERENCES DIALOG
+   ========================================================= */
+
+.hufa-consent-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 90100;
+    display: none;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 0;
+    background: rgba(10, 25, 47, 0.5);
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+    font-family: "Manrope", system-ui, -apple-system, sans-serif;
+    opacity: 0;
+    transition: opacity .22s ease
+}
+
+.hufa-consent-overlay.is-open {
+    display: flex
+}
+
+.hufa-consent-overlay.is-visible {
+    opacity: 1
+}
+
+.hufa-consent-sheet {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 480px;
+    max-height: 85vh;
+    padding: 18px 16px calc(18px + env(safe-area-inset-bottom, 0px));
+    background: #ffffff;
+    border-radius: 20px 20px 0 0;
+    box-shadow: 0 24px 60px rgba(10, 25, 47, 0.25);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    transform: translateY(16px);
+    transition: transform .22s ease
+}
+
+.hufa-consent-overlay.is-visible .hufa-consent-sheet {
+    transform: translateY(0)
+}
+
+@media (min-width: 640px) {
+
+    .hufa-consent-overlay {
+        align-items: center;
+        padding: 24px
+    }
+
+    .hufa-consent-sheet {
+        border-radius: 20px;
+        padding: 22px
+    }
+
+}
+
+/* Sheet header */
+.hufa-consent-sheet-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 6px
+}
+
+.hufa-consent-sheet-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    color: #0A192F
+}
+
+.hufa-consent-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    border: 1px solid #D5E0EC;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #0A192F;
+    cursor: pointer;
+    transition: border-color .18s ease, color .18s ease
+}
+
+.hufa-consent-close:hover {
+    border-color: #E48A2F;
+    color: #E48A2F
+}
+
+.hufa-consent-sheet-intro {
+    margin: 0 0 14px;
+    font-size: 13px;
+    line-height: 1.55;
+    color: #4A5D74
+}
+
+/* Category cards */
+.hufa-consent-category {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 14px;
+    margin-bottom: 10px;
+    border: 1px solid rgba(10, 25, 47, 0.08);
+    border-radius: 14px;
+    background: #F8FAFD
+}
+
+.hufa-consent-category-info {
+    flex: 1 1 auto;
+    min-width: 0
+}
+
+.hufa-consent-category-head {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 4px
+}
+
+.hufa-consent-category-title {
+    margin: 0;
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #0A192F
+}
+
+.hufa-consent-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(228, 138, 47, 0.14);
+    color: #B4650F;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase
+}
+
+.hufa-consent-category-desc {
+    margin: 0;
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: #4A5D74
+}
+
+/* Switch toggle */
+.hufa-consent-switch {
+    position: relative;
+    flex-shrink: 0;
+    width: 46px;
+    height: 26px;
+    margin-top: 2px;
+    padding: 0;
+    border: 1px solid rgba(10, 25, 47, 0.12);
+    border-radius: 999px;
+    background: #D5E0EC;
+    cursor: pointer;
+    transition: background-color .2s ease, border-color .2s ease;
+    -webkit-tap-highlight-color: transparent
+}
+
+.hufa-consent-switch::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #ffffff;
+    box-shadow: 0 2px 6px rgba(10, 25, 47, 0.25);
+    transition: transform .2s ease
+}
+
+.hufa-consent-switch[aria-checked="true"] {
+    background: #E48A2F;
+    border-color: #E48A2F
+}
+
+.hufa-consent-switch[aria-checked="true"]::after {
+    transform: translateX(20px)
+}
+
+.hufa-consent-switch:disabled {
+    opacity: 0.55;
+    cursor: not-allowed
+}
+
+/* Save action */
+.hufa-consent-save {
+    width: 100%;
+    margin-top: 6px;
+    flex: none
+}
+
+.hufa-consent-note {
+    margin: 10px 0 0;
+    font-size: 11.5px;
+    line-height: 1.5;
+    color: #64748B;
+    text-align: center
+}
+
+/* Focus visibility (keyboard + switch access) */
+.hufa-consent-btn:focus-visible,
+.hufa-consent-manage:focus-visible,
+.hufa-consent-close:focus-visible,
+.hufa-consent-switch:focus-visible {
+    outline: 2px solid #E48A2F;
+    outline-offset: 2px
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+
+    .hufa-consent-banner,
+    .hufa-consent-overlay,
+    .hufa-consent-sheet,
+    .hufa-consent-btn,
+    .hufa-consent-switch,
+    .hufa-consent-switch::after,
+    .hufa-consent-close {
+        transition: none
+    }
+
+}

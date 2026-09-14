@@ -1,0 +1,23 @@
+{
+  "name": "vehicle-marketplace",
+  "version": "1.0.0",
+  "description": "Helpufin Auto - Premium AI Automotive Marketplace (SPA)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "build:css": "tailwindcss -o css/tailwind.css --minify",
+    "minify:css": "node scripts/minify-css.js"
+  },
+  "keywords": [
+    "automotive",
+    "marketplace",
+    "spa",
+    "helpufin"
+  ],
+  "author": "Helpufin Auto",
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "tailwindcss": "3.4.17"
+  }
+}

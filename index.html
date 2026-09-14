@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<link rel="icon" type="image/png" href="/assets/logo.png">
+<link rel="apple-touch-icon" href="/assets/logo.png">
+
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link
+rel="preconnect"
+href="https://wkmsibpenpllkkjlidgu.supabase.co"
+crossorigin>
+
+<link
+rel="preload"
+as="image"
+href="/assets/hero-opt.jpg"
+imagesrcset="/assets/hero-mobile.jpg 800w, /assets/hero-opt.jpg 1600w"
+imagesizes="(max-width: 767px) 380px, 1380px"
+fetchpriority="high">
+
+<link
+rel="dns-prefetch"
+href="//fonts.googleapis.com">
+
+<link
+rel="dns-prefetch"
+href="//cdnjs.cloudflare.com">
+
+<link
+rel="dns-prefetch"
+href="//unpkg.com">
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<title>
+Helpufin Auto | Premium AI Automotive Marketplace South Africa
+</title>
+
+<meta
+name="description"
+content="Browse premium vehicles, finance options, luxury inventory, and AI-powered automotive discovery on Helpufin Auto South Africa.">
+
+<meta
+name="keywords"
+content="cars for sale South Africa, premium vehicles, vehicle finance, dealership marketplace, AI car marketplace, luxury cars South Africa">
+
+<meta
+name="author"
+content="Helpufin Auto">
+
+<meta
+name="robots"
+content="index, follow">
+
+<link
+rel="canonical"
+href="https://helpufinauto.co.za/">
+
+<!-- OPEN GRAPH -->
+<meta
+property="og:type"
+content="website">
+
+<meta
+property="og:title"
+content="Helpufin Auto | Premium AI Automotive Marketplace">
+
+<meta
+property="og:description"
+content="Discover premium vehicles, luxury inventory, AI-assisted search, and vehicle finance solutions.">
+
+<meta
+property="og:image"
+content="/assets/HUF1.jpg">
+
+<meta
+property="og:url"
+content="https://helpufinauto.co.za/">
+
+<meta
+property="og:site_name"
+content="Helpufin Auto">
+
+<!-- TWITTER -->
+<meta
+name="twitter:card"
+content="summary_large_image">
+
+<meta
+name="twitter:title"
+content="Helpufin Auto">
+
+<meta
+name="twitter:description"
+content="Premium AI-assisted automotive marketplace in South Africa.">
+
+<meta
+name="twitter:image"
+content="/assets/HUF1.jpg">
+
+<!-- THEME -->
+<meta
+name="theme-color"
+content="#081120">
+
+<!-- PERFORMANCE -->
+<meta
+http-equiv="X-UA-Compatible"
+content="IE=edge">
+
+<meta
+name="format-detection"
+content="telephone=no">
+
+<meta
+name="mobile-web-app-capable"
+content="yes">
+
+<meta
+name="apple-mobile-web-app-capable"
+content="yes">
+
+<meta
+name="apple-mobile-web-app-status-bar-style"
+content="black-translucent">
+
+
+<!-- Tailwind is prebuilt into /css/tailwind.css (see tailwind.config.js
+     and the "build:css" script in package.json). The runtime JIT script
+     (cdn.tailwindcss.com) and its inline tailwind.config were removed
+     in Phase 6 — same theme tokens, zero runtime compilation. -->
+
+<!-- Supabase JS (restored — required for auth/DB on every page) -->
+<script
+defer
+src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js">
+</script>
+
+<link rel="stylesheet"
+href="/css/styles.css">
+
+<!-- PREBUILT TAILWIND (Phase 6) — replaces the removed
+     cdn.tailwindcss.com JIT runtime. Loaded AFTER styles.css so
+     utility-class precedence matches the previous CDN cascade. -->
+<link rel="stylesheet"
+href="/css/tailwind.css">
+
+<!-- PHASE 2 — COOKIE & PRIVACY CONSENT (isolated .hufa-consent-* styles) -->
+<link rel="stylesheet"
+href="/css/consent.css">
+
+
+<link
+href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;700&display=swap"
+rel="stylesheet">
+<!-- Material Symbols Outlined — SUBSET via Google's official icon_names
+     parameter. Contains ONLY the ligatures the app uses (audited by
+     scripts/ms-audit.js, verified with HarfBuzz by scripts/verify-ms-subset.py):
+     balance bookmark close compare_arrows directions_car expand_more
+     home inbox lightbulb menu photo_library sell star star_border
+     support_agent upload. PHASE 4 added: forum (mobile Connect icon —
+     previously missing from the subset, which made the font fall back
+     to the raw ligature text "fORUM") and arrow_forward (dealership
+     directory CTA arrow). 321 KB -> 3.2 KB, font-display:swap included.
+     If a new Material icon is ever added, re-run scripts/ms-audit.js and
+     update this icon_names list. -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined&icon_names=arrow_forward,balance,bookmark,close,compare_arrows,directions_car,expand_more,forum,home,inbox,lightbulb,menu,photo_library,sell,star,star_border,support_agent,upload&display=swap" rel="stylesheet" />
+
+
+<!-- Lucide is loaded ON DEMAND by pages/vehicle.js through
+     js/cdnLoader.js (pinned version) — data-lucide icons are
+     used only on the vehicle page. -->
+
+<!-- SEO STRUCTURED DATA -->
+<script type="application/ld+json">
+{
+"@context":"https://schema.org",
+"@type":"AutoDealer",
+"name":"Helpufin Auto",
+"url":"https://helpufinauto.co.za",
+"logo":"https://helpufinauto.co.za/assets/HUF1.jpg",
+"description":"Premium AI-assisted automotive marketplace in South Africa.",
+"address":{
+"@type":"PostalAddress",
+"addressCountry":"ZA"
+},
+"sameAs":[
+"https://www.facebook.com/",
+"https://www.instagram.com/"
+]
+}
+</script>
+
+</head>
+
+
+
+<body
+class="
+bg-whitecream
+text-darkblue
+font-display
+antialiased
+overflow-x-hidden
+selection:bg-[#E48A2F]
+selection:text-white
+touch-manipulation
+"
+>
+
+<noscript>
+
+<div style="
+padding:20px;
+font-family:sans-serif;
+background:#fff3cd;
+color:#856404;
+text-align:center;
+">
+
+Helpufin Auto requires JavaScript to run properly.
+
+</div>
+
+</noscript>
+
+
+<!-- NAVBAR -->
+
+<header
+id="navbar"
+role="banner">
+</header>
+
+
+<!-- APP -->
+
+<main
+id="app"
+role="main"
+aria-label="Helpufin Auto Marketplace">
+</main>
+
+
+<!-- FOOTER -->
+
+<footer
+id="footer"
+role="contentinfo">
+</footer>
+
+
+<!-- MODAL -->
+
+<div
+id="modal"
+class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50">
+</div>
+
+
+
+<!-- SPA REFRESH SUPPORT (VS Code Live Server / static hosting)
+     Live Server has no History API fallback, so refreshing a
+     clean route like /browse would 404. This registers sw.js,
+     which serves index.html ONLY when the server returns 404
+     for a top-level navigation. URLs, query strings and
+     /vehicle/:id stay exactly as requested. Safe no-op in
+     browsers without service worker support.
+
+     PHASE 3 — sw.js additionally caches SAME-ORIGIN static
+     assets (CSS / JS / fonts / images) with stale-while-
+     revalidate and versioned caches (hufa-static-v*, purged
+     on activation). Cross-origin requests — Supabase auth /
+     DB / storage, CDN libraries, Google Fonts — are never
+     intercepted and never cached. Documents (index.html)
+     stay network-first, so users can never be trapped on
+     stale application code. -->
+
+<script>
+
+(function(){
+
+  if(!("serviceWorker" in navigator)){
+    return;
+  }
+
+  navigator.serviceWorker
+    .register("/sw.js")
+    .catch(function(){
+
+      /* Fallback for sub-path deployments */
+      navigator.serviceWorker
+        .register("sw.js")
+        .catch(function(){});
+
+    });
+
+})();
+
+</script>
+
+<!-- MAIN APP -->
+
+<script
+type="module"
+src="/js/app.js">
+</script>
+
+<!-- PHASE 2 — COOKIE & PRIVACY CONSENT
+     Self-contained module (imports nothing), so it can never
+     interfere with the app module graph. Shows the first-visit
+     banner, stores the decision locally, and exposes
+     window.HUFA_CONSENT for the footer "Cookies" link. -->
+<script
+type="module"
+src="/js/consent.js">
+</script>
+
+<!-- PERFORMANCE OBSERVER -->
+<script>
+
+window.__APP_START__ =
+performance.now();
+
+/* =====================================
+ERROR TRACKING
+===================================== */
+
+window.addEventListener(
+"error",
+(event)=>{
+
+/* PHASE 4 — message + stack only. The raw
+   error object (which could carry auth
+   payloads) is never dumped to the console. */
+
+console.error(
+"[APP ERROR]",
+event.message || "Unknown error"
+);
+
+}
+);
+
+/* =====================================
+UNHANDLED PROMISES
+===================================== */
+
+window.addEventListener(
+"unhandledrejection",
+(event)=>{
+
+/* PHASE 4 — reason is reduced to a string so
+   no promise rejection value (which could be a
+   session/token-bearing object) is echoed. */
+
+console.error(
+"[PROMISE ERROR]",
+((
+typeof event.reason === "object" &&
+event.reason !== null &&
+typeof event.reason.message === "string"
+) ? event.reason.message : String(event.reason))
+);
+
+}
+);
+
+/* =====================================
+PERFORMANCE LOGGING
+===================================== */
+
+window.addEventListener(
+"load",
+()=>{
+
+const loadTime =
+(
+performance.now()
+-
+window.__APP_START__
+).toFixed(2);
+
+console.log(
+`[APP LOADED] ${loadTime}ms`
+);
+
+}
+);
+
+</script>
+
+
+
+<!-- REVEAL INIT -->
+
+<script type="module">
+
+import { revealInit }
+from "/js/ui.js";
+
+requestIdleCallback(()=>{
+
+revealInit();
+
+});
+
+</script>
+
+<!-- PDF EXPORT + DEALER INVENTORY EXPORT (.pdf via jsPDF, .xlsx via
+     SheetJS) are loaded ON DEMAND through js/cdnLoader.js the first
+     time an export is requested. Previously all three libraries
+     (incl. unused html2canvas) were downloaded on every page. -->
+
+
+</body>
+</html>
