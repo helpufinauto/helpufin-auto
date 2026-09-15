@@ -1,3 +1,7 @@
+import { asset } from "../js/basePath.js";
+
+const PLACEHOLDER = asset("/placeholder.png");
+
 import {
 supabase,
 getAuthUser
@@ -4878,7 +4882,7 @@ bg-[#F8FAFC]
 <img
 src="${
 v.image_url ||
-'/placeholder.png'
+PLACEHOLDER
 }"
 class="
 absolute

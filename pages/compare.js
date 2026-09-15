@@ -1,3 +1,7 @@
+import { asset } from "../js/basePath.js";
+
+const PLACEHOLDER = asset("/placeholder.png");
+
 import { formatPrice, formatMileage, getLocation, getImage } from "../components/vehicleCard.js";
 import { supabase } from "../js/api.js";
 import { navigate } from "../js/router.js";
@@ -488,7 +492,7 @@ vehicles.map((v)=>{
     alt="${name}"
     loading="lazy"
     decoding="async"
-    onerror="this.src='/placeholder.png'"
+    onerror="this.src='${PLACEHOLDER}'"
     class="compare-preview-img"
   >
   <div class="compare-preview-body">

@@ -1,3 +1,5 @@
+import { asset } from "../js/basePath.js";
+
 /*
 ====================================================
 AUTH LOADING OVERLAY (LOGIN/LOGOUT TRANSITION)
@@ -178,7 +180,7 @@ el.setAttribute("aria-live", "polite");
 el.setAttribute("aria-busy", "true");
 
 el.innerHTML = `
-<img class="alo-art" src="/assets/loading.png" alt="HUFA - Helpufin Auto" draggable="false">
+<img class="alo-art" src="${asset("/assets/loading.png")}" alt="HUFA - Helpufin Auto" draggable="false">
 <div class="alo-bar" aria-hidden="true"></div>
 <p class="alo-message"></p>
 `;

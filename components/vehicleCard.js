@@ -1,3 +1,7 @@
+import { asset } from "../js/basePath.js";
+
+const PLACEHOLDER = asset("/placeholder.png");
+
 import { getCompare, toggleCompare } from "../js/ui.js";
 import { calculateMonthly } from "../js/financeEngine.js";
 
@@ -29,7 +33,7 @@ export function getLocation(v) {
 }
 
 export function getImage(v) {
-  return v.image_url || "/placeholder.png";
+  return v.image_url || PLACEHOLDER;
 }
 
 /* ---------- FINANCE ESTIMATE ---------- */
@@ -575,7 +579,7 @@ onclick="viewVehicle('${v.id}')">
       loading="lazy"
       decoding="async"
       alt="${v.make} ${v.model}"
-      onerror="this.src='/placeholder.png'"
+      onerror="this.src='${PLACEHOLDER}'"
       class="w-full h-full object-cover transition-transform duration-500"
     >
   </div>
@@ -675,7 +679,7 @@ onclick="viewVehicle('${v.id}')">
       loading="lazy"
       decoding="async"
       alt="${v.make} ${v.model}"
-      onerror="this.src='/placeholder.png'"
+      onerror="this.src='${PLACEHOLDER}'"
       class="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
     >
 

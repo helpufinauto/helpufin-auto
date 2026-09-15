@@ -1,3 +1,7 @@
+import { asset, stripBase } from "../js/basePath.js";
+
+const PLACEHOLDER = asset("/placeholder.png");
+
 
 import {
   supabase,
@@ -624,7 +628,7 @@ export function renderDashboardShell({
 }){
 
 const isStandalone =
-!window.location.pathname.startsWith("/dashboard");
+!stripBase(window.location.pathname).startsWith("/dashboard");
 
 /* View links: loadView on the dashboard,
    deep-link wrapper on standalone pages */
@@ -730,7 +734,7 @@ justify-end
 ">
 
 <img
-src="/assets/logo1.webp"
+src="${asset("/assets/logo1.webp")}"
 alt="Helpufin Auto"
 width="1080"
 height="360"
@@ -1355,7 +1359,7 @@ accountType = "unknown";
    slot. Unknown → slot stays empty. */
 
 const isStandalone =
-!window.location.pathname.startsWith("/dashboard");
+!stripBase(window.location.pathname).startsWith("/dashboard");
 
 const action = (view) =>
 isStandalone
@@ -5630,7 +5634,7 @@ gap-4
 
 <img
 id="tradeInSummaryImage"
-src="/placeholder.png"
+src="${PLACEHOLDER}"
 alt="Vehicle Photo"
 class="
 w-full
@@ -12812,7 +12816,7 @@ request.images.length
 : [];
 
 const mainImage =
-images[0] || "/placeholder.png";
+images[0] || PLACEHOLDER;
 
 /* Secondary images, in existing order. Image index 0 is
    the cover/main image that stays dominant on the left. */
@@ -12847,7 +12851,7 @@ thumbnails.length === 0
         tradein-mobile-image
         w-full h-32 object-contain rounded-lg bg-gray-50 border border-gray-100 mt-2
       "
-      onerror="this.onerror=null;this.src='/placeholder.png';"
+      onerror="this.onerror=null;this.src='${PLACEHOLDER}';"
     />`
 : `
     <div class="tradein-mobile-gallery mt-2">
@@ -12863,7 +12867,7 @@ thumbnails.length === 0
           loading="lazy"
           decoding="async"
           class="tradein-gallery-main-img"
-          onerror="this.onerror=null;this.src='/placeholder.png';"
+          onerror="this.onerror=null;this.src='${PLACEHOLDER}';"
         />
       </button>
 
@@ -12881,7 +12885,7 @@ thumbnails.length === 0
             loading="lazy"
             decoding="async"
             class="tradein-gallery-thumb-img"
-            onerror="this.onerror=null;this.src='/placeholder.png';"
+            onerror="this.onerror=null;this.src='${PLACEHOLDER}';"
           />
         </button>
         `).join("")}
@@ -13323,10 +13327,10 @@ return `
 <div class="flex items-center gap-3">
 
 <img
-src="${v.image_url || '/placeholder.png'}"
+src="${v.image_url || PLACEHOLDER}"
 loading="lazy"
 decoding="async"
-onerror="this.src='/placeholder.png'"
+onerror="this.src='${PLACEHOLDER}'"
 class="
 w-20
 h-14
@@ -13395,10 +13399,10 @@ overflow-hidden
 ">
 
 <img
-src="${v.image_url || '/placeholder.png'}"
+src="${v.image_url || PLACEHOLDER}"
 loading="lazy"
 decoding="async"
-onerror="this.src='/placeholder.png'"
+onerror="this.src='${PLACEHOLDER}'"
 class="
 w-20
 h-16
@@ -13488,10 +13492,10 @@ flex-col
 ">
 
 <img
-src="${v.image_url || '/placeholder.png'}"
+src="${v.image_url || PLACEHOLDER}"
 loading="lazy"
 decoding="async"
-onerror="this.src='/placeholder.png'"
+onerror="this.src='${PLACEHOLDER}'"
 class="
 w-full
 h-24
@@ -15882,12 +15886,12 @@ title="Open vehicle listing"
 <div class="relative">
 
 <img
-src="${vehicleData.image_url || v.vehicle_image_url || v.image_url || '/assets/images/vehicle-placeholder.jpg'}"
+src="${vehicleData.image_url || v.vehicle_image_url || v.image_url || asset("/assets/images/vehicle-placeholder.jpg")}"
 class="
 crm-veh-img
 w-full
 "
-onerror="this.src='/placeholder.png'"
+onerror="this.src='${PLACEHOLDER}'"
 >
 
 <div class="
@@ -17909,10 +17913,10 @@ flex-shrink-0
 
   ${v.image_url ? `
 <img 
-src="${v.image_url || '/placeholder.png'}"
+src="${v.image_url || PLACEHOLDER}"
 loading="lazy"
 decoding="async"
-onerror="this.src='/placeholder.png'"
+onerror="this.src='${PLACEHOLDER}'"
 class="
 w-full
 h-full
@@ -20174,10 +20178,10 @@ const rankedRows =
 <div class="dashboard-rank-badge">${String(index + 1).padStart(2, "0")}</div>
 
 <img
-src="${v.image_url || '/placeholder.png'}"
+src="${v.image_url || PLACEHOLDER}"
 loading="lazy"
 decoding="async"
-onerror="this.src='/placeholder.png'"
+onerror="this.src='${PLACEHOLDER}'"
 class="
 dashboard-ranked-image
 w-20
@@ -20239,10 +20243,10 @@ const invRows =
 <div class="ov-inv-row">
 
 <img
-src="${v.image_url || '/placeholder.png'}"
+src="${v.image_url || PLACEHOLDER}"
 loading="lazy"
 decoding="async"
-onerror="this.src='/placeholder.png'"
+onerror="this.src='${PLACEHOLDER}'"
 class="ov-inv-img"
 alt="${v.make || ""} ${v.model || ""}"
 >
@@ -21726,7 +21730,7 @@ async function getHufaExportLogo(){
 if(__hufaExportLogoCache !== null) return __hufaExportLogoCache;
 
 __hufaExportLogoCache =
-await loadImageDataUrl("/assets/logo.png");
+await loadImageDataUrl(asset("/assets/logo.png"));
 
 return __hufaExportLogoCache;
 

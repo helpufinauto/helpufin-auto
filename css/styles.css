@@ -1495,7 +1495,7 @@ inset 0 1px 0 rgba(255,255,255,0.12)
 rgba(255,255,255,0.82),
 rgba(255,255,255,0.72)
 ),
-url('/assets/menubackground.webp') center center / cover no-repeat,
+url('../assets/menubackground.webp') center center / cover no-repeat,
 linear-gradient(
 180deg,
 rgba(255,255,255,0.99),
@@ -4667,7 +4667,7 @@ rgba(8,17,31,0.98)
 .site-footer {
     background-color: #F4F8FC;
     background-image: linear-gradient(180deg, rgba(244,248,252,0.62) 0%, rgba(244,248,252,0.22) 48%, rgba(244,248,252,0.02) 100%),
-    url("/assets/footerbg.webp");
+    url("../assets/footerbg.webp");
     background-repeat: no-repeat;
     background-size: cover, cover;
     background-position: center top, bottom right
@@ -9768,7 +9768,7 @@ rgba(238,243,249,0) 100%
     left: 0;
     bottom: 0;
     width: 100%;
-    background-image: url("/assets/headerlogo.webp");
+    background-image: url("../assets/headerlogo.webp");
     background-size: 100% auto;
     background-repeat: no-repeat;
     background-position: left center;
@@ -15646,7 +15646,7 @@ rgba(238,243,249,0) 100%
       rgba(248,250,252,0.2) 50%,
       rgba(255,255,255,0.35) 100%
     ),
-    url('/assets/login.webp') center / cover no-repeat;
+    url('../assets/login.webp') center / cover no-repeat;
     opacity: 0.3
 }
 .signup-page {
@@ -15659,7 +15659,7 @@ rgba(238,243,249,0) 100%
     inset: 0;
     z-index: -1;
     pointer-events: none;
-    background: url('/assets/signup.webp') top center / 100% auto repeat-y;
+    background: url('../assets/signup.webp') top center / 100% auto repeat-y;
     opacity: 0.4;
     -webkit-mask-image: linear-gradient(
     180deg,

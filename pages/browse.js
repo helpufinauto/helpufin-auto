@@ -2,6 +2,7 @@ import { renderVehicleCard } from "../components/vehicleCard.js";
 import { supabase } from "../js/api.js";
 import { isAllowed } from "../js/consent.js";
 import { navigate } from "../js/router.js";
+import { route } from "../js/basePath.js";
 import {
   pager,
   skeleton,
@@ -7513,7 +7514,7 @@ if(filters.maintenancePlanActive){
 }
 
 
-    const newUrl = "/browse?" + params.toString();
+    const newUrl = route("/browse?" + params.toString());
 
 history.replaceState({}, "", newUrl);
 

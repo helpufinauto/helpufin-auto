@@ -1,3 +1,7 @@
+import { asset } from "../js/basePath.js";
+
+const PLACEHOLDER = asset("/placeholder.png");
+
 import {
   supabase,
   getAuthUser
@@ -296,13 +300,13 @@ flex-col
   <div class="relative overflow-hidden">
 
     <img
-      src="${v.image_url || '/placeholder.png'}"
+      src="${v.image_url || PLACEHOLDER}"
       width="400"
       height="320"
       loading="lazy"
       decoding="async"
       alt="${v.make || ''} ${v.model || ''}"
-      onerror="this.src='/placeholder.png'"
+      onerror="this.src='${PLACEHOLDER}'"
       class="
 w-full
 h-[320px]

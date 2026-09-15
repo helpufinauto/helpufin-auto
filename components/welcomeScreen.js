@@ -1,3 +1,5 @@
+import { asset } from "../js/basePath.js";
+
 /*
 ====================================================
 HUFA POST-SIGNUP WELCOME SCREEN
@@ -98,7 +100,7 @@ animation:none;
 	el.innerHTML = `
 <img
 class="welcome-art"
-src="/assets/welcome.png"
+src="${asset("/assets/welcome.png")}"
 alt="Welcome to HUFA — your smarter way to buy, sell and compare vehicles."
 draggable="false"
 >

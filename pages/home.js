@@ -1,3 +1,7 @@
+import { asset } from "../js/basePath.js";
+
+const PLACEHOLDER = asset("/placeholder.png");
+
 import { renderVehicleCard } from "../components/vehicleCard.js";
 import { supabase } from "../js/api.js";
 import { navigate } from "../js/router.js";
@@ -444,7 +448,7 @@ to-white
 /* Browse By Brands section — light-blue automotive showroom wallpaper */
 .home-browse-section{
   background-color:transparent !important;
-  background-image:url('/assets/savedbackground.png?v=2') !important;
+  background-image:url('${asset("/assets/savedbackground.png?v=2")}') !important;
   background-position:center !important;
   background-size:cover !important;
   background-repeat:no-repeat !important;
@@ -561,8 +565,8 @@ z-0
 ">
 
 <img
-src="/assets/hero-opt.jpg"
-srcset="/assets/hero-mobile.jpg 800w, /assets/hero-opt.jpg 1600w"
+src="${asset("/assets/hero-opt.jpg")}"
+srcset="${asset("/assets/hero-mobile.jpg")} 800w, ${asset("/assets/hero-opt.jpg")} 1600w"
 sizes="(max-width: 767px) 380px, 1380px"
 loading="eager"
 fetchpriority="high"
@@ -1941,62 +1945,62 @@ const BRAND_DATA = [
 
 {
 name:"BMW",
-logo:"/assets/brands/opt/bmw.png"
+logo:asset("/assets/brands/opt/bmw.png")
 },
 
 {
 name:"Mercedes-Benz",
-logo:"/assets/brands/opt/mercedes.png"
+logo:asset("/assets/brands/opt/mercedes.png")
 },
 
 {
 name:"Audi",
-logo:"/assets/brands/opt/audi.png"
+logo:asset("/assets/brands/opt/audi.png")
 },
 
 {
 name:"Toyota",
-logo:"/assets/brands/opt/toyota.png"
+logo:asset("/assets/brands/opt/toyota.png")
 },
 
 {
 name:"Volkswagen",
-logo:"/assets/brands/opt/vw.png"
+logo:asset("/assets/brands/opt/vw.png")
 },
 
 {
 name:"Ford",
-logo:"/assets/brands/opt/ford.png"
+logo:asset("/assets/brands/opt/ford.png")
 },
 
 {
 name:"Porsche",
-logo:"/assets/brands/opt/porsche.png"
+logo:asset("/assets/brands/opt/porsche.png")
 },
 
 {
 name:"Nissan",
-logo:"/assets/brands/opt/nissan.png"
+logo:asset("/assets/brands/opt/nissan.png")
 },
 
 {
 name:"Hyundai",
-logo:"/assets/brands/opt/hyundai.png"
+logo:asset("/assets/brands/opt/hyundai.png")
 },
 
 {
 name:"Kia",
-logo:"/assets/brands/opt/kia.png"
+logo:asset("/assets/brands/opt/kia.png")
 },
 
 {
 name:"Land Rover",
-logo:"/assets/brands/opt/landrover.png"
+logo:asset("/assets/brands/opt/landrover.png")
 },
 
 {
 name:"Suzuki",
-logo:"/assets/brands/opt/suzuki.png"
+logo:asset("/assets/brands/opt/suzuki.png")
 }
 
 ];
@@ -2231,7 +2235,7 @@ transition-transform
 duration-500
 group-hover:scale-105
 "
-onerror="if(!this.dataset.f){this.dataset.f=1;this.src=this.src.replace('/brands/opt/','/brands/')}else{this.onerror=null;this.src='/placeholder.png'}"
+onerror="if(!this.dataset.f){this.dataset.f=1;this.src=this.src.replace('/brands/opt/','/brands/')}else{this.onerror=null;this.src='${PLACEHOLDER}'}"
 >
 
 </div>
@@ -4546,14 +4550,14 @@ FEATURED_PROFILE_BASE +
   >
 
   <img
-  src="${vehicle?.image_url || '/placeholder.png'}"
+  src="${vehicle?.image_url || PLACEHOLDER}"
   width="470"
   height="200"
   loading="${slideIndex === 0 ? "eager" : "lazy"}"
   ${slideIndex === 0 ? 'fetchpriority="high"' : ""}
   decoding="async"
   alt="${vehicle?.make || ''} ${vehicle?.model || ''}"
-  onerror="this.src='/placeholder.png'"
+  onerror="this.src='${PLACEHOLDER}'"
   class="
   absolute
   inset-0

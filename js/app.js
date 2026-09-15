@@ -4,6 +4,7 @@ MAIN APPLICATION ENTRY POINT
 =========================================================
 */
 
+import { route, stripBase } from "./basePath.js";
 import { router, navigate } from "./router.js";
 import { Navbar, refreshNavAuth } from "../components/navbar.js";
 import { Footer } from "../components/footer.js";
@@ -76,7 +77,7 @@ async function handleAuthRedirect(){
 
     window.__HUFA_PASSWORD_RECOVERY__ = true;
 
-    if(window.location.pathname !== "/reset-password"){
+    if(stripBase(window.location.pathname) !== "/reset-password"){
 
       /* Hand off to the dedicated recovery
          destination page, preserving the current
@@ -89,7 +90,7 @@ async function handleAuthRedirect(){
           scroll: 0
         },
         "",
-        "/reset-password" + window.location.hash
+        route("/reset-password") + window.location.hash
       );
 
     }
@@ -108,7 +109,7 @@ if(hash.includes("access_token")){
   if(data.session){
 
     // 🔥 ONLY redirect IF user is on login page
-    if(window.location.pathname === "/login"){
+    if(stripBase(window.location.pathname) === "/login"){
       navigate("/dashboard");
     }
 

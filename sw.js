@@ -80,8 +80,8 @@ const CURRENT_CACHES = new Set([
 
 const INDEX_URL =
 new URL(
-  "/",
-  self.location.origin
+  "./",
+  self.location.href
 ).href;
 
 /* Served-from-cache entries younger than this are trusted
@@ -283,8 +283,14 @@ async function handleNavigation(request, url){
 
     /* Keep a fresh copy of index.html for the
        network-failure fallback only. Never served
-       while the network is reachable. */
-    if(isHtmlResponse(response)){
+       while the network is reachable.
+
+       PHASE 5 — only the application-root document itself
+       may refresh the shell. With 404.html deployed, other
+       HTML documents (e.g. a direct navigation to
+       /helpufin-auto/404.html) must never overwrite the
+       offline shell with a non-application page. */
+    if(isHtmlResponse(response) && url.href === INDEX_URL){
       storeShellCopy(response);
     }
 

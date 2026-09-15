@@ -1,4 +1,5 @@
 ﻿import { navigate, prefetchDashboard } from "../js/router.js";
+import { asset, stripBase } from "../js/basePath.js";
 
 import {
   supabase,
@@ -65,7 +66,7 @@ shrink-0
 onclick="goHome()">
 
 <img
-src="/assets/logo1.webp"
+src="${asset("/assets/logo1.webp")}"
 alt="Helpufin Auto"
 width="1080"
 height="360"
@@ -341,7 +342,7 @@ aria-label="Mobile Navigation"
 <div class="mobile-menu-brand" onclick="goHome()" role="link" aria-label="Go to Home">
 
 <img
-src="/assets/logo1.webp"
+src="${asset("/assets/logo1.webp")}"
 alt="Helpufin Auto"
 width="1080"
 height="360"
@@ -973,7 +974,7 @@ root.removeAttribute(
 function updateNavHighlight(){
 
 const currentPath =
-window.location.pathname;
+stripBase(window.location.pathname);
 
 clearNavHighlights();
 
@@ -1692,7 +1693,7 @@ logoutBtn.style.visibility =
      updateNavHighlight(): /dashboard prefix. */
   mobileDashBtn.classList.toggle(
     "nav-link-active",
-    window.location.pathname.indexOf("/dashboard") === 0
+    stripBase(window.location.pathname).indexOf("/dashboard") === 0
   );
 
   mobileDashBtn.onclick = async (e)=>{

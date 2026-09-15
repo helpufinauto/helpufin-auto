@@ -1,3 +1,5 @@
+import { route } from "./basePath.js";
+
 /*
 ====================================================
 SUPABASE CONNECTION
@@ -410,7 +412,7 @@ console.log(
         window.navigate("/login");
       }else{
         window.location.replace(
-          "/login"
+          route("/login")
         );
       }
 

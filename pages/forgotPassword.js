@@ -1,5 +1,6 @@
 import { supabase } from "../js/api.js";
 import { toast } from "../js/ui.js";
+import { appUrl } from "../js/basePath.js";
 
 /*
 =========================================================
@@ -417,10 +418,12 @@ document.getElementById("forgotBtn");
     /* PHASE 11 — SECURE RECOVERY REQUEST
 
        Uses the existing Supabase client. The
-       redirect target is derived from the CURRENT
-       origin (works identically on localhost and
-       production — no hardcoded domain). The
-       result is intentionally not inspected:
+       redirect target is derived from the shared
+       base-path helper (js/basePath.js) so it is
+       correct on localhost ("/") and under any
+       deployment base such as GitHub Pages
+       ("/helpufin-auto/") — no hardcoded domain.
+       The result is intentionally not inspected:
        success, failure, rate limits and unknown
        addresses all produce the exact same
        generic confirmation below. Nothing is
@@ -428,7 +431,7 @@ document.getElementById("forgotBtn");
 
     await supabase.auth.resetPasswordForEmail(email, {
       redirectTo:
-      window.location.origin + "/reset-password"
+      appUrl("/reset-password")
     });
 
     }catch(err){

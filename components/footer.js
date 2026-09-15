@@ -1,3 +1,5 @@
+import { asset } from "../js/basePath.js";
+
 export function Footer() {
   return `
 
@@ -9,7 +11,7 @@ export function Footer() {
       <!-- Brand -->
       <div class="space-y-4 col-span-2 sm:col-span-1">
         <img
-          src="/assets/logo1.webp"
+          src="${asset("/assets/logo1.webp")}"
           alt="Helpufin Auto"
           class="w-auto h-auto max-w-full object-contain"
           loading="lazy"

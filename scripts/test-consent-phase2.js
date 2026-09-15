@@ -126,12 +126,12 @@ async function httpChecks(){
 
     check(
       "index.html includes consent.js",
-      home.body.includes('src="/js/consent.js"')
+      home.body.includes('src="js/consent.js"')
     );
 
     check(
       "index.html includes consent.css",
-      home.body.includes('href="/css/consent.css"')
+      home.body.includes('href="css/consent.css"')
     );
 
     const consentJs =

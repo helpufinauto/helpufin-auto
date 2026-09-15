@@ -1,4 +1,7 @@
 import { compareButton } from "../../js/ui.js";
+import { asset } from "../../js/basePath.js";
+
+const PLACEHOLDER_JPG = asset("/placeholder.jpg");
 
 /* =========================================
 VEHICLE CARD
@@ -16,13 +19,13 @@ onclick="navigate('/vehicle?id=${vehicle.id}')"
 <div class="vehicle-card-image-wrap">
 
 <img
-src="${vehicle.images?.[0] || '/placeholder.jpg'}"
+src="${vehicle.images?.[0] || PLACEHOLDER_JPG}"
 width="400"
 height="300"
 loading="lazy"
 decoding="async"
 alt="${vehicle.year} ${vehicle.make} ${vehicle.model}"
-onerror="this.src='/placeholder.jpg'"
+onerror="this.src='${PLACEHOLDER_JPG}'"
 class="vehicle-card-image"
 />
 

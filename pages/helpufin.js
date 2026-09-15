@@ -1,4 +1,6 @@
-﻿import { navigate } from "../js/router.js";
+﻿import { asset } from "../js/basePath.js";
+
+import { navigate } from "../js/router.js";
 import { searchVehicles } from "../js/searchAdapter.js";
 import { rankVehicles, getPopularityMap, getUserProfile } from "../js/aiEngine.js";
 import { calculateMonthly } from "../js/financeEngine.js";
@@ -1207,7 +1209,7 @@ if(Object.keys(answers).length){
             : "We relaxed some filters to show the closest available vehicles.";
 
         const resultsCards = scored.slice(0, 3).map((v, index) => {
-            const imageUrl = v.image_url || (v.images && v.images[0]) || "/assets/HUF1.webp";
+            const imageUrl = v.image_url || (v.images && v.images[0]) || asset("/assets/HUF1.webp");
             const matchLabel = v.matchPct >= 80 ? "Excellent Match" : v.matchPct >= 60 ? "Good Match" : v.matchPct >= 40 ? "Fair Match" : "Partial Match";
             const borderColor = index === 0 ? "border-[#E48A2F]" : "border-slate-200";
             const badgeBg = index === 0 ? "bg-[#E48A2F] text-[#08111F]" : "bg-slate-100 text-[#08111F]";

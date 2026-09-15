@@ -303,6 +303,12 @@ getAuthUser,
 needsMfaVerification
 } from "./api.js";
 
+import {
+  route,
+  stripBase,
+  asset
+} from "./basePath.js";
+
 /* =========================================
 SEO HELPERS
 ========================================= */
@@ -404,7 +410,7 @@ vehicle.year || "",
 },
 
 "image":[
-vehicle.image || "/assets/HUF1.webp"
+vehicle.image || asset("/assets/HUF1.webp")
 ]
 
 });
@@ -445,7 +451,7 @@ data.description ||
 
 updateOG(
 "og:image",
-data.image || "/assets/HUF1.webp"
+data.image || asset("/assets/HUF1.webp")
 );
 
 updateOG(
@@ -964,7 +970,9 @@ function scheduleHomepagePrefetch(){
 export async function router(){
 
   let path =
-window.location.pathname
+stripBase(
+  window.location.pathname
+)
 .replace(/\/+$/,"") || "/";
 
   const root =
@@ -1000,7 +1008,7 @@ path:"/login",
 scroll:0
 },
 "",
-"/login"
+route("/login")
 );
 
     root.innerHTML = `
@@ -1063,7 +1071,7 @@ if(await needsMfaVerification()){
   scroll:0
   },
   "",
-  "/mfa-verify"
+  route("/mfa-verify")
   );
 
   path = "/mfa-verify";
@@ -1091,7 +1099,7 @@ path:"/",
 scroll:0
 },
 "",
-"/"
+route("/")
 );
 
   root.innerHTML = `
@@ -1306,7 +1314,7 @@ title,
 description,
 image:
 vehicleData.image ||
-"/assets/HUF1.webp"
+asset("/assets/HUF1.webp")
 
 });
 
@@ -1422,9 +1430,12 @@ navigationInProgress = true;
     }
   );
 
+  const currentLogicalPath =
+  stripBase(window.location.pathname) +
+  window.location.search;
+
   if(
-    window.location.pathname +
-    window.location.search === path
+    currentLogicalPath === path
   ){
 
     navigationInProgress = false;
@@ -1439,7 +1450,7 @@ scroll:0,
 timestamp:Date.now()
 },
 "",
-path
+route(path)
 );
 
   requestAnimationFrame(async ()=>{

@@ -1,4 +1,8 @@
-﻿import {
+﻿import { asset } from "../js/basePath.js";
+
+const PLACEHOLDER = asset("/placeholder.png");
+
+import {
 supabase,
 createVehicleInterest,
 getUserProfile
@@ -549,7 +553,7 @@ v.image_url
 ||
 (v.images && v.images[0])
 ||
-"/assets/HUF1.webp",
+asset("/assets/HUF1.webp"),
 
 /* The PDF brochure consumes this same object. Carrying the vehicle's
    real seller_id + full ordered image gallery here (both of which the
@@ -575,7 +579,7 @@ if(v.images && v.images.length){
 }else if(v.image_url){
   images = [v.image_url];
 }else{
-  images = ["/placeholder.png"];
+  images = [PLACEHOLDER];
 }
 
 imageList = images;
@@ -659,7 +663,7 @@ min-w-0
       "
       onclick="openFullscreenViewer(-1)"
       onload="document.getElementById('galleryLoader')?.classList.add('opacity-0')"
-      onerror="this.src='/assets/HUF1.webp';document.getElementById('galleryLoader')?.classList.add('opacity-0')">
+      onerror="this.src='${asset("/assets/HUF1.webp")}';document.getElementById('galleryLoader')?.classList.add('opacity-0')">
 
 <!-- OVERLAY GRADIENT -->
 <div class="
@@ -810,7 +814,7 @@ pointer-events-none
           loading="lazy"
           decoding="async"
           alt="Vehicle image thumbnail"
-          onerror="this.src='/placeholder.png'"
+          onerror="this.src='${PLACEHOLDER}'"
           class="w-full h-full object-cover pointer-events-none">
 
       </div>
@@ -3432,7 +3436,7 @@ window.downloadBrochure = async function(vehicle){
 
     const heroUrl =
       images[0] ||
-      "/assets/HUF1.webp";
+      asset("/assets/HUF1.webp");
 
     /* SPLIT: HERO + COVER THUMBNAILS (PAGE 1) / FULL GALLERY (NEW PAGES).
 
@@ -5493,7 +5497,7 @@ FIXEDDUMMY2
       <img id="fsImg"
         src="${imageList[currentImageIndex]}"
         class="hufa-fs-img"
-        onerror="this.src='/assets/HUF1.webp'">
+        onerror="this.src='${asset("/assets/HUF1.webp")}'">
     </div>
 
     <!-- NEXT -->
@@ -5503,7 +5507,7 @@ FIXEDDUMMY2
       <img id="fsImg"
         src="${imageList[currentImageIndex]}"
         class="hufa-fs-img"
-        onerror="this.src='/assets/HUF1.webp'">
+        onerror="this.src='${asset("/assets/HUF1.webp")}'">
     </div>
 
     <!-- NEXT -->
@@ -5520,7 +5524,7 @@ FIXEDDUMMY2
         <div data-fsthumb="${i}"
         class="hufa-fs-thumb ${i === currentImageIndex ? 'active' : ''}"
         onclick="fsSetImage(${i})">
-          <img src="${img}" onerror="this.src='/assets/HUF1.webp'">
+          <img src="${img}" onerror="this.src='${asset("/assets/HUF1.webp")}'">
         </div>
       `).join("")}
     </div>
@@ -6705,13 +6709,13 @@ h-[170px]
 ">
 
 <img
-src="${v.image_url || '/placeholder.png'}"
+src="${v.image_url || PLACEHOLDER}"
 width="300"
 height="170"
 loading="lazy"
 decoding="async"
 alt="${v.make || ''} ${v.model || ''}"
-onerror="this.src='/placeholder.png'"
+onerror="this.src='${PLACEHOLDER}'"
 class="
 w-full
 h-full
@@ -7150,13 +7154,13 @@ h-[170px]
 ">
 
 <img
-src="${v.image_url || '/placeholder.png'}"
+src="${v.image_url || PLACEHOLDER}"
 width="300"
 height="170"
 loading="lazy"
 decoding="async"
 alt="${v.make || ''} ${v.model || ''}"
-onerror="this.src='/placeholder.png'"
+onerror="this.src='${PLACEHOLDER}'"
 class="
 w-full
 h-full

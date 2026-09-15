@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<meta
+name="robots"
+content="noindex">
+
+<title>Page not found | Helpufin Auto</title>
+
+<style>
+  /* Minimal, self-contained styling — this document exists
+     only to hand a first-visit deep link to the real app. */
+  html,body{margin:0;padding:0}
+  body{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:#F4F6F8;
+    font-family:Manrope,system-ui,-apple-system,"Segoe UI",sans-serif;
+    color:#08111F;
+    text-align:center;
+    padding:24px;
+  }
+  .hufa-404{max-width:480px}
+  .hufa-404 h1{
+    font-size:64px;
+    margin:0 0 8px;
+    color:#005BBF;
+    letter-spacing:-2px;
+  }
+  .hufa-404 p{
+    color:#33475E;
+    font-size:15px;
+    line-height:1.6;
+    margin:0 0 24px;
+  }
+  .hufa-404 a{
+    display:inline-block;
+    background:#005BBF;
+    color:#FFFFFF;
+    text-decoration:none;
+    padding:12px 28px;
+    border-radius:16px;
+    font-weight:600;
+    font-size:14px;
+  }
+</style>
+</head>
+
+<body>
+<main class="hufa-404">
+  <h1>404</h1>
+  <p>
+    This page could not be found.
+    Taking you to Helpufin&nbsp;Auto&hellip;
+    <noscript>
+      JavaScript is disabled &mdash; please open the site
+      directly at <a href="https://helpufinauto.co.za/">helpufinauto.co.za</a>.
+    </noscript>
+  </p>
+  <a href="https://helpufinauto.co.za/">Go to Helpufin Auto</a>
+</main>
+
+<script>
+/* PHASE 5 — GITHUB PAGES FIRST-VISIT DEEP-LINK FALLBACK
+============================================================
+GitHub Pages project sites have no server-side SPA history
+fallback, and on a FIRST-EVER visit the service worker is
+not installed yet. A direct request to a clean route such as
+
+    https://helpufinauto.github.io/helpufin-auto/browse
+
+therefore reaches THIS document: GitHub Pages serves the
+site's 404.html — with HTTP status 404 — at the requested
+URL, which is still exactly what the user typed.
+
+This file is deliberately a tiny static bootstrap, NOT a
+copy of the application shell. It transfers control to
+index.html while preserving the exact requested URL:
+
+  1. The full requested URL — pathname + query string +
+     hash — is saved to sessionStorage (same-origin,
+     never logged, never sent anywhere).
+  2. The browser is replaced (no extra history entry) to
+     the app root, which serves index.html.
+  3. index.html's Phase 5 restore script runs BEFORE any
+     module executes and hands the saved URL to
+     history.replaceState, so the router, the pages and
+     the hash-based password-recovery handling all see the
+     exact requested address.
+
+Guards — each one returns silently and simply leaves this
+static "not found" page on screen:
+
+  • Non-github.io hosts: localhost and any other host never
+    enter this flow (localhost keeps its existing server.js
+    / service-worker fallback behaviour untouched).
+  • Paths outside /<repo>/: mirrors the Phase 4 base-path
+    boot rule in index.html (keep both rules in sync).
+  • This document's own URL (/helpufin-auto/404.html).
+  • Known static-asset extensions: mirrors the
+    ASSET_EXTENSIONS guard in sw.js — a missing .js/.css/.png
+    is a real error and must never boot the SPA.
+
+js/basePath.js remains the ONLY base-path abstraction for
+the running application. This file cannot import it:
+document-relative module URLs are unreliable from arbitrary
+404 depths (e.g. /helpufin-auto/dashboard/dealer would
+resolve js/basePath.js under /dashboard/). It therefore
+repeats only the single github.io first-path-segment rule
+that index.html's boot already encodes — no new abstraction,
+no second router, no application markup.
+============================================================ */
+(function(){
+  "use strict";
+
+  var KEY = "hufa:ghp-redirect";
+  var MAX_AGE_MS = 300000; /* 5 min — stale entries are ignored */
+
+  /* 1. GitHub Pages only — localhost never enters this flow. */
+  if(!/(^|\.)github\.io$/.test(location.hostname)){
+    return;
+  }
+
+  /* 2. Only URLs under the project-site prefix /<repo>/
+        (same first-segment rule as index.html's Phase 4 boot). */
+  var repo = location.pathname.match(/^\/([^/]+)\//);
+  if(!repo){
+    return;
+  }
+
+  var BASE = "/" + repo[1] + "/";
+
+  /* 3. Never bootstrap from this document's own address. */
+  if(location.pathname === BASE + "404.html"){
+    return;
+  }
+
+  /* 4. Real missing files must stay real 404s (mirrors the
+        ASSET_EXTENSIONS guard in sw.js). */
+  var ASSET_EXTENSIONS = new Set([
+
+    ".html", ".js", ".mjs", ".css", ".json",
+    ".png", ".jpg", ".jpeg", ".gif", ".svg",
+    ".ico", ".webp", ".avif",
+    ".woff", ".woff2", ".ttf", ".otf", ".eot",
+    ".txt", ".xml", ".pdf", ".docx",
+    ".mp4", ".webm", ".mp3", ".wav"
+
+  ]);
+
+  var lastSegment =
+  location.pathname.split("/").pop() || "";
+
+  var dotIndex =
+  lastSegment.lastIndexOf(".");
+
+  if(dotIndex !== -1){
+
+    var ext =
+    lastSegment.slice(dotIndex).toLowerCase();
+
+    if(ASSET_EXTENSIONS.has(ext)){
+      return;
+    }
+
+  }
+
+  /* 5. Save the EXACT requested URL (pathname + query + hash)
+        and transfer to the app root. location.replace() adds
+        no history entry, so back-button behaviour stays
+        correct. Nothing is ever logged. */
+  try{
+    sessionStorage.setItem(
+      KEY,
+      JSON.stringify({
+        href: location.href,
+        ts: Date.now()
+      })
+    );
+  }catch(err){
+    /* Storage unavailable (blocked/disabled) — the deep link
+       degrades to the app root instead of a dead 404 page. */
+  }
+
+  location.replace(BASE);
+
+})();
+</script>
+</body>
+
+</html>
