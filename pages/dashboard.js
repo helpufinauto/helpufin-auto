@@ -144,7 +144,7 @@ export async function getActiveListLimit(){
 
 }
 
-async function getFeaturedLimit(){
+export async function getFeaturedLimit(){
 
   const limits =
   await getPackageLimits();
@@ -1576,7 +1576,7 @@ document.getElementById(
 );
 
 const fullName =
-`${profile.name || ""} ${profile.surname || ""}`
+`${profile.first_name || profile.name || ""} ${profile.surname || ""}`
 .trim() || "User";
 
 if(nameEl){
@@ -1632,7 +1632,7 @@ if(url){
    broken image can never be displayed. */
 window.__DASH_PROFILE_INITIALS__ =
 computeInitials(
-profile.name,
+profile.first_name || profile.name,
 profile.surname
 );
 
@@ -1661,7 +1661,7 @@ setDashboardAvatarClickable(avatar, false);
 
 avatar.innerText =
 computeInitials(
-profile.name,
+profile.first_name || profile.name,
 profile.surname
 );
 
@@ -1930,6 +1930,16 @@ document.getElementById(
 return;
 }
 
+/* PHASE 4 — always refresh the authoritative profile before prefill so
+   a stale dashboard/profile cache (including the 5-minute overview
+   cache written by hydrateDashboardProfile) can never render blank
+   First Name / Surname immediately after signup → verification → login.
+   getUserProfile() remains the single loader/creator with missing-only
+   backfill; clearAuthCache() only invalidates the api.js cache, no second
+   cache is introduced and established values (incl. province) are never
+   overwritten here. */
+clearAuthCache();
+
 const profile =
 await getUserProfile();
 
@@ -1953,7 +1963,7 @@ document.body.style.overflow = "hidden";
 document.body.style.touchAction = "none";
 
 const firstName =
-profile?.name || "";
+profile?.first_name || profile?.name || "";
 
 const surname =
 profile?.surname || "";
@@ -11793,6 +11803,7 @@ class="w-full min-w-0">
 
         <!-- Initial skeleton state: replaced by loadInventory() with the
              real inventory table or the existing empty state. -->
+        ${renderInventoryUsageMarkup()}
         ${renderInventoryTableSkeleton()}
 
       </div>
@@ -17196,11 +17207,330 @@ window.__inventoryData = {
   enquiryMap
 };
 
+/* Resolve package limits once per authenticated user, then let the
+   renderer fill the usage metrics from the array above */
+await loadInventoryUsageLimits(user.id);
 /* Hand over to the renderer */
 await renderInventoryResults();
 
 }
 
+/* =========================================
+INVENTORY USAGE (PHASE 6)
+Metrics shown above the "Your Inventory"
+section.
+
+Uploaded + featured-used are derived from
+window.__inventoryData.vehicles — the SAME
+seller-scoped inventory (.eq("seller_id", uid))
+that loadInventory() already fetched for the
+list below. NO additional Supabase vehicle
+query is performed.
+
+Limits reuse the existing authoritative
+package helpers in this file:
+  getActiveListLimit()  -> vehicle listings
+  getFeaturedLimit()    -> featured listings
+========================================= */
+
+let inventoryUsageLimits = null;
+let inventoryUsageLimitsUserId = null;
+let inventoryUsageLimitsRequest = null;
+
+/* Limits are cached per authenticated user. Logout is a soft
+   SPA navigation (clearAuthCache() resets the api.js caches but
+   not this module state), so the cache is keyed to the user id
+   and re-resolved when a different account signs in. */
+async function loadInventoryUsageLimits(userId){
+
+  if(
+    inventoryUsageLimits &&
+    inventoryUsageLimitsUserId === userId
+  ){
+    return inventoryUsageLimits;
+  }
+
+  if(
+    inventoryUsageLimitsRequest &&
+    inventoryUsageLimitsUserId === userId
+  ){
+    return inventoryUsageLimitsRequest;
+  }
+
+  inventoryUsageLimitsUserId = userId;
+
+  inventoryUsageLimitsRequest = (async ()=>{
+
+    try{
+
+      const [active, featured, sub] =
+      await Promise.all([
+        getActiveListLimit(),
+        getFeaturedLimit(),
+        getUserSubscription()
+      ]);
+
+      inventoryUsageLimits = {
+        active,
+        featured,
+        planName: sub?.name || null
+      };
+
+    }catch(e){
+
+      /* Never block the inventory render because
+         the package limits could not be resolved. */
+      inventoryUsageLimits = {
+        active: null,
+        featured: null,
+        planName: null
+      };
+
+    }
+
+    return inventoryUsageLimits;
+
+  })();
+
+  return inventoryUsageLimitsRequest;
+
+}
+
+/* Unlimited (Infinity) uses the existing
+   "Unlimited" product wording. Unknown limits
+   render a dash so no false zero is shown. */
+function formatUsageValue(value){
+
+  if(value === null || value === undefined){
+    return "-";
+  }
+
+  if(value === Infinity) return "Unlimited";
+
+  return String(value);
+
+}
+
+/* Remaining is never negative, even when
+   historical data already exceeds the limit. */
+function remainingUsageValue(limit, used){
+
+  if(limit === null || limit === undefined){
+    return null;
+  }
+
+  if(limit === Infinity) return Infinity;
+
+  return Math.max(0, limit - used);
+
+}
+
+function usageLimitSub(limit, label){
+
+  if(limit === null || limit === undefined){
+    return "Package limit unavailable";
+  }
+
+  if(limit === Infinity){
+    return `No ${label} cap on your package`;
+  }
+
+  return `of ${limit} included`;
+
+}
+
+function setInventoryUsageValue(id, value){
+
+  const el = document.getElementById(id);
+
+  if(!el) return;
+
+  el.textContent = formatUsageValue(value);
+
+}
+
+function renderInventoryUsage(){
+
+  const wrap =
+  document.getElementById("inventoryUsage");
+
+  if(!wrap) return;
+
+  /* Complete seller-scoped inventory — never the
+     filtered / searched / sorted display subset. */
+  const vehicles =
+  window.__inventoryData?.vehicles || [];
+
+  const limits =
+  inventoryUsageLimits || {};
+
+  const uploaded =
+  vehicles.length;
+
+  const featuredUsed =
+  vehicles.filter(v => v && v.is_featured === true).length;
+
+  setInventoryUsageValue(
+    "invUploaded",
+    uploaded
+  );
+
+  setInventoryUsageValue(
+    "invUploadedSub",
+    usageLimitSub(limits.active, "listing")
+  );
+
+  setInventoryUsageValue(
+    "invRemaining",
+    remainingUsageValue(limits.active, uploaded)
+  );
+
+  setInventoryUsageValue(
+    "invRemainingSub",
+    "available to list"
+  );
+
+  setInventoryUsageValue(
+    "invFeatUsed",
+    featuredUsed
+  );
+
+  setInventoryUsageValue(
+    "invFeatUsedSub",
+    usageLimitSub(limits.featured, "featured")
+  );
+
+  setInventoryUsageValue(
+    "invFeatRemaining",
+    remainingUsageValue(limits.featured, featuredUsed)
+  );
+
+  setInventoryUsageValue(
+    "invFeatRemainingSub",
+    "available to feature"
+  );
+
+  const plan =
+  document.getElementById("inventoryUsagePlan");
+
+  if(plan){
+
+    plan.textContent =
+    limits.planName
+      ? `${limits.planName} package`
+      : "Package limits";
+
+  }
+
+}
+
+
+/* =========================================
+INVENTORY USAGE MARKUP (PHASE 6)
+Four existing dashboard KPI cards shown
+immediately above the "Your Inventory"
+section. Values are written by
+renderInventoryUsage() from the complete
+seller-scoped inventory array.
+========================================= */
+
+function renderInventoryUsageMarkup(){
+
+return `
+
+<div id="inventoryUsage" class="mb-6">
+
+  <p class="dashboard-kpi-label">
+    Inventory Usage
+  </p>
+
+  <p id="inventoryUsagePlan" class="text-xs text-[#64748B] mb-3">
+    Checking package limits...
+  </p>
+
+  <div class="
+grid
+grid-cols-2
+md:grid-cols-4
+gap-3
+md:gap-4
+items-stretch
+">
+
+    <div class="dashboard-kpi-card">
+
+      <p class="dashboard-kpi-label">
+        Vehicles Uploaded
+      </p>
+
+      <p id="invUploaded" class="dashboard-kpi-number">
+        <span class="skeleton-shimmer block h-6 w-16 rounded-md"></span>
+      </p>
+
+      <p id="invUploadedSub" class="dashboard-kpi-sub">
+        Counting inventory...
+      </p>
+
+    </div>
+
+    <div class="dashboard-kpi-card">
+
+      <p class="dashboard-kpi-label">
+        Vehicles Remaining
+      </p>
+
+      <p id="invRemaining" class="dashboard-kpi-number">
+        <span class="skeleton-shimmer block h-6 w-16 rounded-md"></span>
+      </p>
+
+      <p id="invRemainingSub" class="dashboard-kpi-sub">
+        Checking package limits...
+      </p>
+
+    </div>
+
+    <div class="dashboard-kpi-card">
+
+      <p class="dashboard-kpi-label">
+        Featured Used
+      </p>
+
+      <p id="invFeatUsed" class="dashboard-kpi-number">
+        <span class="skeleton-shimmer block h-6 w-16 rounded-md"></span>
+      </p>
+
+      <p id="invFeatUsedSub" class="dashboard-kpi-sub">
+        Counting inventory...
+      </p>
+
+    </div>
+
+    <!-- style only neutralises the existing 3-card rule
+         (dashboard-kpi-card:last-child -> grid-column 1/-1 at <=480px)
+         so this 4-card grid keeps a clean 2 x 2 on mobile. -->
+    <div class="dashboard-kpi-card" style="grid-column:auto">
+
+      <p class="dashboard-kpi-label">
+        Featured Remaining
+      </p>
+
+      <p id="invFeatRemaining" class="dashboard-kpi-number">
+        <span class="skeleton-shimmer block h-6 w-16 rounded-md"></span>
+      </p>
+
+      <p id="invFeatRemainingSub" class="dashboard-kpi-sub">
+        Checking package limits...
+      </p>
+
+    </div>
+
+  </div>
+
+</div>
+
+`;
+
+}
 /* =========================================
 INVENTORY RENDERER (CLIENT-SIDE)
 Re-renders the inventory list from
@@ -17242,6 +17572,7 @@ focusWasSearch ? prevFocus.selectionStart : null;
 
   if(!vehicles || !vehicles.length){
     box.innerHTML = `
+${renderInventoryUsageMarkup()}
       <div class="
 text-center
 py-10
@@ -17272,6 +17603,9 @@ active:scale-[0.98]
         </button>
       </div>
     `;
+/* Empty inventory still shows the usage panel:
+       0 uploaded / full remaining + 0 featured used. */
+    renderInventoryUsage();
     return;
   }
 
@@ -17412,6 +17746,7 @@ Highest Engagement
 
 </div>
 
+${renderInventoryUsageMarkup()}
 <div class="space-y-4">
 
 <div class="
@@ -18160,6 +18495,17 @@ html += `</div>`;
 if(!box) return;
 
 box.innerHTML = html;
+/* =========================
+INVENTORY USAGE (PHASE 6)
+Refresh the four usage metrics from the
+complete seller-scoped inventory + existing
+package limits. Filtering / sorting / search
+never affect these counts.
+========================= */
+
+renderInventoryUsage();
+
+
 
 /* =========================
 RESULT COUNT

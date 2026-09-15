@@ -31,7 +31,12 @@ rejectZipFile
 🔥 SELLER PROFILE + LIMIT SYSTEM
 ==================================================== */
 
-/* GET USER PROFILE */
+/* GET USER PROFILE — PHASE 2 FIX: the SOLE authoritative
+   profiles loader/creator. getAuthUser() below reads auth only
+   and never inserts a profiles row, so no minimal-row race is
+   possible. Existing rows with missing fields are safely
+   backfilled from user_metadata (missing-only; established
+   values including an already-set province are never changed). */
 export async function getUserProfile(){
 
   if(cachedProfile){
@@ -64,100 +69,21 @@ console.log(
 
 }
 
+  const insertPayload =
+    buildAuthoritativeProfileInsert(user);
+
+  if(!insertPayload){
+    return null;
+  }
+
+  insertPayload.role = "user";
+
   const {
     data:newProfile,
     error:createError
   } = await supabase
     .from("profiles")
-    .insert({
-
-      id: user.id,
-
-      name:
-      user.user_metadata?.name ||
-      null,
-
-      surname:
-      user.user_metadata?.surname ||
-      null,
-
-      email:
-      user.email,
-
-      account_type:
-      user.user_metadata?.account_type ||
-      "private",
-
-dealership_name:
-user.user_metadata?.dealership_name ||
-null,
-
-dealership_logo:
-user.user_metadata?.dealership_logo ||
-null,
-
-/* PHASE 3 — the new dealership contact +
-   social fields flow through the SAME
-   metadata → profiles path. Existing users
-   are unaffected (this fallback only runs
-   when no profile row exists yet). */
-
-dealership_email:
-user.user_metadata?.dealership_email ||
-null,
-
-phone:
-user.user_metadata?.phone ||
-null,
-
-dealership_address:
-user.user_metadata?.dealership_address ||
-null,
-
-social_links:
-user.user_metadata?.social_links &&
-typeof user.user_metadata.social_links === "object"
-? user.user_metadata.social_links
-: {},
-
-/* PHASE 6 — optional contact info captured at signup.
-   Travels through the same metadata → profiles path.
-   Blank fields default to null. */
-
-mobile_number:
-user.user_metadata?.mobile_number || null,
-
-whatsapp_number:
-user.user_metadata?.whatsapp_number || null,
-
-alternative_contact:
-user.user_metadata?.alternative_contact || null,
-
-/* PHASE 7 — optional profile fields captured at
-   signup. Same metadata → profiles path. Blank
-   fields default to null. */
-
-bio:
-user.user_metadata?.bio || null,
-
-location:
-user.user_metadata?.location || null,
-
-city:
-user.user_metadata?.city || null,
-
-province:
-user.user_metadata?.province || null,
-
-website:
-user.user_metadata?.website || null,
-
-avatar_url:
-user.user_metadata?.avatar_url || null,
-
-role: "user"
-
-    })
+    .insert(insertPayload)
     .select()
     .single();
 
@@ -184,6 +110,39 @@ role: "user"
   return newProfile;
 
 }
+
+  /* PHASE 2 FIX — safe backfill for rows created by the old
+     minimal fallback. Only missing/empty columns with meaningful
+     metadata are patched; nothing established is overwritten and
+     an already-set province is never changed. */
+  const backfillPatch =
+    buildProfileBackfillPatch(data, user);
+
+  if(backfillPatch){
+
+    const {
+      data:repairedProfile,
+      error:repairError
+    } = await supabase
+      .from("profiles")
+      .update(backfillPatch)
+      .eq("id", user.id)
+      .select()
+      .single();
+
+    if(!repairError && repairedProfile){
+      cachedProfile = repairedProfile;
+      return repairedProfile;
+    }
+
+    if(window.DEBUG_AUTH){
+      console.log(
+        "Profile backfill skipped",
+        repairError?.code || repairError?.message || ""
+      );
+    }
+
+  }
 
   cachedProfile = data;
 
@@ -220,6 +179,196 @@ export async function canUploadVehicle(){
 
 window.sb = supabase;
 
+/* PHASE 2 FIX (persistence) — ONE authoritative profile builder.
+   Builds the full profiles INSERT payload from auth user_metadata.
+   getUserProfile() is the ONLY profiles creator; getAuthUser()
+   never inserts a profiles row (it reads auth only). Returns null
+   when there is no authenticated user. No passwords, tokens,
+   session data or File objects are ever included. */
+function buildAuthoritativeProfileInsert(user){
+
+  if(!user || !user.id){
+    return null;
+  }
+
+  const meta = user.user_metadata || {};
+
+  const metaSocialLinks =
+    meta.social_links &&
+    typeof meta.social_links === "object" &&
+    !Array.isArray(meta.social_links)
+      ? meta.social_links
+      : {};
+
+  const pickText = (key) =>
+    typeof meta[key] === "string" && meta[key].trim()
+      ? meta[key].trim()
+      : null;
+
+  /* PHASE 4 — canonical name alias. Historic signup metadata may carry
+     the given name under alternate keys; first_name stays authoritative
+     in profiles while name remains populated for legacy readers. */
+  const givenName =
+    pickText("first_name") ||
+    pickText("name");
+
+  return {
+    id: user.id,
+    name: givenName,
+    first_name: givenName,
+    surname: pickText("surname"),
+    email: user.email || null,
+    account_type:
+      meta.account_type === "dealer" ||
+      meta.account_type === "private"
+        ? meta.account_type
+        : "private",
+    dealership_name: pickText("dealership_name"),
+    dealership_logo: pickText("dealership_logo"),
+    dealership_email: pickText("dealership_email"),
+    phone: pickText("phone"),
+    dealership_address: pickText("dealership_address"),
+    social_links: metaSocialLinks,
+    mobile_number: pickText("mobile_number"),
+    whatsapp_number: pickText("whatsapp_number"),
+    alternative_contact: pickText("alternative_contact"),
+    bio: pickText("bio"),
+    location: pickText("location"),
+    city: pickText("city"),
+    province: pickText("province"),
+    website: pickText("website"),
+    avatar_url: pickText("avatar_url")
+  };
+
+}
+
+/* PHASE 2 FIX — canonical province allowlist for backfill guard.
+   Mirrors SIGNUP_PROVINCES in pages/signup.js so only a valid
+   canonical metadata value may set an empty profiles.province. */
+const AUTHORITATIVE_PROVINCES = [
+  "Gauteng",
+  "Western Cape",
+  "KwaZulu-Natal",
+  "Eastern Cape",
+  "Free State",
+  "Limpopo",
+  "Mpumalanga",
+  "North West",
+  "Northern Cape"
+];
+
+function isCanonicalProvince(value){
+  const raw = String(value || "").trim().toLowerCase();
+  if(!raw){
+    return false;
+  }
+  return AUTHORITATIVE_PROVINCES.some(
+    (name) => name.toLowerCase() === raw
+  );
+}
+
+function canonicalProvince(value){
+  const raw = String(value || "").trim().toLowerCase();
+  return AUTHORITATIVE_PROVINCES.find(
+    (name) => name.toLowerCase() === raw
+  ) || String(value || "").trim();
+}
+
+/* PHASE 2 FIX — missing-value helper for safe backfill.
+   Only genuinely missing profile fields are repaired; real user
+   edits are never overwritten by stale metadata. */
+function isMissingProfileValue(value){
+  if(value === null || value === undefined){
+    return true;
+  }
+  if(typeof value === "string"){
+    return value.trim() === "";
+  }
+  if(typeof value === "object" && !Array.isArray(value)){
+    return Object.keys(value).length === 0;
+  }
+  return false;
+}
+
+/* PHASE 4 — safe metadata to profiles backfill patch builder.
+   Returns null when nothing needs repair. Established values,
+   including an already-set profiles.province, are never touched.
+   PHASE 4 — probe BOTH name aliases when deciding whether the legacy
+   name column needs repair, so first_name-only rows are not left with
+   a blank name that Edit Profile older readers display. */
+function buildProfileBackfillPatch(profile, user){
+  if(!profile || !user){
+    return null;
+  }
+  const meta = user.user_metadata || {};
+  const patch = {};
+  const considerText = (column, metaKey) => {
+    const current = profile[column];
+    const incoming = meta[metaKey];
+    if(
+      isMissingProfileValue(current) &&
+      typeof incoming === "string" &&
+      incoming.trim() !== ""
+    ){
+      patch[column] = incoming.trim();
+    }
+  };
+  const considerName = (column) => {
+    const current = profile[column];
+    const incoming =
+      typeof meta.first_name === "string" && meta.first_name.trim() !== ""
+        ? meta.first_name.trim()
+        : (
+          typeof meta.name === "string" && meta.name.trim() !== ""
+            ? meta.name.trim()
+            : ""
+        );
+    /* PHASE 4 — repair both name columns together from either metadata
+       key, missing-only. Keeps aliases consistent without overwriting
+       established values. */
+    if(isMissingProfileValue(current) && incoming){
+      patch[column] = incoming;
+    }
+  };
+  considerName("name");
+  considerName("first_name");
+  considerText("surname", "surname");
+  considerText("dealership_name", "dealership_name");
+  considerText("dealership_email", "dealership_email");
+  considerText("phone", "phone");
+  considerText("dealership_address", "dealership_address");
+  considerText("mobile_number", "mobile_number");
+  considerText("whatsapp_number", "whatsapp_number");
+  considerText("alternative_contact", "alternative_contact");
+  considerText("bio", "bio");
+  considerText("location", "location");
+  considerText("city", "city");
+  considerText("website", "website");
+  considerText("avatar_url", "avatar_url");
+  considerText("dealership_logo", "dealership_logo");
+  if(
+    isMissingProfileValue(profile.social_links) &&
+    meta.social_links &&
+    typeof meta.social_links === "object" &&
+    !Array.isArray(meta.social_links) &&
+    Object.keys(meta.social_links).length > 0
+  ){
+    patch.social_links = meta.social_links;
+  }
+  if(
+    isMissingProfileValue(profile.province) &&
+    typeof meta.province === "string" &&
+    meta.province.trim() !== "" &&
+    isCanonicalProvince(meta.province)
+  ){
+    patch.province = canonicalProvince(meta.province);
+  }
+  if(Object.keys(patch).length === 0){
+    return null;
+  }
+  return patch;
+}
+
 /* =========================================
 🔥 CENTRAL AUTH CACHE
 ========================================= */
@@ -227,7 +376,10 @@ window.sb = supabase;
 let cachedUser = null;
 let cachedProfile = null;
 
-/* GET AUTH USER */
+/* GET AUTH USER — PHASE 2 FIX: auth only. Never creates a
+   profiles row (getUserProfile() is the sole creator), so no
+   minimal-row race is possible. Public behavior preserved:
+   returns the cached Supabase auth user or fetches it fresh. */
 export async function getAuthUser(){
 
   if(cachedUser){
@@ -235,7 +387,7 @@ export async function getAuthUser(){
   }
 
   const {
-data:{ user }
+  data:{ user }
 } = await supabase.auth.getUser();
 
 cachedUser =

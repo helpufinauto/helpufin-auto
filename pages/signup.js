@@ -1,5 +1,6 @@
 import { supabase, describeAuthError } from "../js/api.js";
 import { navigate } from "../js/router.js";
+import { appUrl } from "../js/basePath.js";
 import { toast } from "../js/ui.js";
 import {
   PHASE2_SOCIAL_PLATFORMS,
@@ -15,6 +16,11 @@ import {
   renderPasswordRequirements
 } from "../js/passwordPolicy.js";
 import { showWelcomeScreen } from "../components/welcomeScreen.js";
+import {
+  savePageState,
+  loadPageState,
+  clearPageState
+} from "../js/stateManager.js";
 
 /* PHASE 7 — Profile card avatar state. Reuses the
    SAME validation rules, "profile-images" bucket,
@@ -33,6 +39,324 @@ const SIGNUP_AVATAR_MAX_SIZE =
 5 * 1024 * 1024;
 
 let signupAvatarFile = null;
+
+/* PHASE 2 FIX — signup draft persistence (state-loss fix).
+   The signup template holds state ONLY in the DOM, and
+   router() rewrites #app on authChanged/popstate re-renders.
+   This preserves the user's NON-SENSITIVE entries in the
+   EXISTING sessionStorage-backed state manager
+   (js/stateManager.js) so a same-tab re-render restores them.
+   SECURITY: passwords, password confirmation, File objects,
+   avatar/image data, tokens and credentials are NEVER stored. */
+
+const SIGNUP_DRAFT_KEY = "signup";
+
+/* PHASE 2 (persistence fix) — canonical SA province list + normalizer.
+   Single source for validating the two signup province selects
+   (dealerProvince / profileProvince). Only a valid canonical value
+   may be written to auth metadata as the single `province` key.
+   Returns the canonical name or "" (invalid/blank). */
+const SIGNUP_PROVINCES = [
+  "Gauteng",
+  "Western Cape",
+  "KwaZulu-Natal",
+  "Eastern Cape",
+  "Free State",
+  "Limpopo",
+  "Mpumalanga",
+  "North West",
+  "Northern Cape"
+];
+
+function normalizeProvinceName(value){
+
+  const raw = String(value || "").trim().toLowerCase();
+
+  if(!raw){
+    return "";
+  }
+
+  for(const name of SIGNUP_PROVINCES){
+
+    if(name.toLowerCase() === raw){
+      return name;
+    }
+
+  }
+
+  return "";
+
+}
+
+let signupDraftSaveTimer = null;
+
+function loadSignupDraft(){
+
+  const saved = loadPageState(SIGNUP_DRAFT_KEY);
+
+  if(
+    !saved ||
+    typeof saved !== "object" ||
+    Array.isArray(saved)
+  ){
+    return null;
+  }
+
+  return saved;
+
+}
+
+function setTextValue(id, value){
+
+  if(typeof value !== "string"){
+    return;
+  }
+
+  const el = document.getElementById(id);
+
+  if(!el){
+    return;
+  }
+
+  el.value = value;
+
+}
+
+function setSelectValue(id, value){
+
+  if(typeof value !== "string"){
+    return;
+  }
+
+  const el = document.getElementById(id);
+
+  if(!el || !el.options){
+    return;
+  }
+
+  /* Do not overwrite with a stale value whose option
+     no longer exists. */
+  const exists =
+    Array.prototype.some.call(
+      el.options,
+      (o) => o.value === value
+    );
+
+  if(!exists){
+    return;
+  }
+
+  el.value = value;
+
+}
+
+/* Restores static (non-social) draft fields. The explicit
+   ?account=private|dealer preset — an intentional navigation
+   choice — takes precedence over a saved account type. */
+function restoreSignupDraft(saved, presetAccount){
+
+  if(!saved){
+    return;
+  }
+
+  setTextValue("name", saved.name);
+  setTextValue("surname", saved.surname);
+  setTextValue("email", saved.email);
+
+  if(
+    presetAccount !== "private" &&
+    presetAccount !== "dealer"
+  ){
+    setSelectValue("accountType", saved.accountType);
+  }
+
+  setTextValue("dealership", saved.dealership);
+  setTextValue("dealerEmail", saved.dealerEmail);
+  setTextValue("dealerPhone", saved.dealerPhone);
+  setTextValue("dealerAddress", saved.dealerAddress);
+  setSelectValue("dealerProvince", saved.dealerProvince);
+
+  setTextValue("mobileNumber", saved.mobileNumber);
+  setTextValue("whatsappNumber", saved.whatsappNumber);
+  setTextValue("altContactNumber", saved.altContactNumber);
+
+  setTextValue("profileBio", saved.profileBio);
+  setTextValue("profileLocation", saved.profileLocation);
+  setTextValue("profileCity", saved.profileCity);
+  setSelectValue("profileProvince", saved.profileProvince);
+  setTextValue("profileWebsite", saved.profileWebsite);
+
+}
+
+/* Restores social-link draft values AFTER the social inputs
+   are built dynamically. Reveals each platform field that
+   has a saved value so the restored link is visible. */
+function restoreSignupSocialDraft(saved){
+
+  if(
+    !saved ||
+    !saved.socialLinks ||
+    typeof saved.socialLinks !== "object"
+  ){
+    return;
+  }
+
+  for(const p of PHASE2_SOCIAL_PLATFORMS){
+
+    const value = saved.socialLinks[p.id];
+
+    if(
+      typeof value !== "string" ||
+      !value
+    ){
+      continue;
+    }
+
+    const input =
+      document.getElementById(
+        `signupSocialInput-${p.id}`
+      );
+
+    if(!input){
+      continue;
+    }
+
+    input.value = value;
+
+    const field =
+      document.getElementById(
+        `signupSocialField-${p.id}`
+      );
+
+    if(field){
+      field.classList.remove("hidden");
+    }
+
+    const chip =
+      document.getElementById(
+        `signupSocialChip-${p.id}`
+      );
+
+    if(chip){
+      chip.classList.add(
+        "border-[#3B82F6]",
+        "bg-[#3B82F6]/10",
+        "text-[#3B82F6]"
+      );
+    }
+
+  }
+
+}
+
+/* Collects ONLY allowlisted non-sensitive fields.
+   password / passwordConfirm / avatar File / tokens are
+   deliberately never read here and never passed to
+   savePageState(). */
+function collectSignupDraft(){
+
+  const form = document.getElementById("signupForm");
+
+  const read = (id) =>
+    document.getElementById(id)?.value ?? "";
+
+  const socialLinks = {};
+
+  for(const p of PHASE2_SOCIAL_PLATFORMS){
+
+    const value =
+      document.getElementById(
+        `signupSocialInput-${p.id}`
+      )?.value?.trim() || "";
+
+    if(value){
+      socialLinks[p.id] = value;
+    }
+
+  }
+
+  /* The ?account= preset is an intentional navigation choice:
+     apply it over any stale saved value and never write it
+     back into the draft. */
+  const preset =
+    form?.dataset?.signupPresetAccount || "";
+
+  return {
+    name: read("name"),
+    surname: read("surname"),
+    email: read("email"),
+    accountType:
+      preset === "private" || preset === "dealer"
+        ? preset
+        : read("accountType"),
+    dealership: read("dealership"),
+    dealerEmail: read("dealerEmail"),
+    dealerPhone: read("dealerPhone"),
+    dealerAddress: read("dealerAddress"),
+    dealerProvince: read("dealerProvince"),
+    mobileNumber: read("mobileNumber"),
+    whatsappNumber: read("whatsappNumber"),
+    altContactNumber: read("altContactNumber"),
+    profileBio: read("profileBio"),
+    profileLocation: read("profileLocation"),
+    profileCity: read("profileCity"),
+    profileProvince: read("profileProvince"),
+    profileWebsite: read("profileWebsite"),
+    socialLinks
+  };
+
+}
+
+function scheduleSignupDraftSave(form){
+
+  if(
+    form.dataset.signupComplete === "true"
+  ){
+    return;
+  }
+
+  if(signupDraftSaveTimer){
+    clearTimeout(signupDraftSaveTimer);
+  }
+
+  signupDraftSaveTimer = setTimeout(() => {
+
+    signupDraftSaveTimer = null;
+
+    if(
+      !document.getElementById("signupForm") ||
+      form.dataset.signupComplete === "true"
+    ){
+      return;
+    }
+
+    savePageState(
+      SIGNUP_DRAFT_KEY,
+      collectSignupDraft()
+    );
+
+  }, 250);
+
+}
+
+/* Clears the draft after a genuinely successful signup so no
+   signup information is left in sessionStorage. Also cancels
+   any pending debounced write so it cannot re-save after
+   the success panel replaces the form. */
+function clearSignupDraft(form){
+
+  if(signupDraftSaveTimer){
+    clearTimeout(signupDraftSaveTimer);
+    signupDraftSaveTimer = null;
+  }
+
+  if(form){
+    form.dataset.signupComplete = "true";
+  }
+
+  clearPageState(SIGNUP_DRAFT_KEY);
+
+}
 
 function computeSignupAvatarInitials(){
 
@@ -293,7 +617,9 @@ md:py-16
 px-4
 ">
 
-<div class="
+<div
+id="signupContent"
+class="
 max-w-2xl
 mx-auto
 ">
@@ -1617,6 +1943,15 @@ new URLSearchParams(
 window.location.search
 ).get("account");
 
+/* PHASE 2 FIX — restore the saved NON-SENSITIVE draft BEFORE
+   wiring dependent UI, so avatar initials (bindSignupAvatar)
+   and the dealer/launch blocks (updatePlans) reflect the
+   restored values. The ?account= preset wins over saved
+   account type inside restoreSignupDraft. */
+const signupDraft = loadSignupDraft();
+
+restoreSignupDraft(signupDraft, presetAccount);
+
 /* PHASE 7 — wire the Profile card avatar */
 bindSignupAvatar();
 
@@ -1816,6 +2151,84 @@ chip.classList.toggle(
 
 }
 
+/* PHASE 2 FIX — restore saved social links AFTER the
+   inputs are built (they did not exist at the earlier
+   restore step), then persist NON-SENSITIVE draft state. */
+restoreSignupSocialDraft(signupDraft);
+
+/* PHASE 2 FIX — persist NON-SENSITIVE draft state on
+   input/change. The ?account= preset wins over the saved
+   account type: it is applied above by restoreSignupDraft
+   and is never written into the saved draft by this
+   listener, so a re-render before any keystroke cannot
+   overwrite the user's choice with a stale saved value. */
+form.dataset.signupPresetAccount = presetAccount || "";
+
+form.addEventListener(
+"input",
+(e)=>{
+
+if(!e.target || e.target === form){
+return;
+}
+
+/* SECURITY: never persist password material. These
+   inputs are excluded even though they fire input
+   events on this form. */
+if(
+e.target.id === "password" ||
+e.target.id === "passwordConfirm"
+){
+return;
+}
+
+scheduleSignupDraftSave(form);
+
+}
+);
+
+form.addEventListener(
+"change",
+(e)=>{
+
+if(!e.target || e.target === form){
+return;
+}
+
+if(
+e.target.id === "password" ||
+e.target.id === "passwordConfirm"
+){
+return;
+}
+
+scheduleSignupDraftSave(form);
+
+}
+);
+
+const socialInputsBox =
+document.getElementById("signupSocialInputs");
+
+if(socialInputsBox){
+socialInputsBox.addEventListener(
+"input",
+() => scheduleSignupDraftSave(form)
+);
+socialInputsBox.addEventListener(
+"change",
+() => scheduleSignupDraftSave(form)
+);
+}
+
+/* Immediately persist the restored draft (covers the
+   pure re-render case where no input event fires), and
+   persist on account-type change so the dealer/profile
+   toggle survives a re-render before any keystroke. */
+if(signupDraft){
+scheduleSignupDraftSave(form);
+}
+
 form.addEventListener("submit", async (e)=>{
 
 e.preventDefault();
@@ -1873,9 +2286,19 @@ const dealerAddress =
 document.getElementById("dealerAddress")
 ?.value?.trim() || "";
 
-const dealerProvince =
+const dealerProvinceRaw =
 document.getElementById("dealerProvince")
 ?.value?.trim() || "";
+
+/* PHASE 2 FIX — single canonical province. */
+const profileProvinceRaw =
+document.getElementById("profileProvince")
+?.value || "";
+
+const province =
+account_type === "dealer"
+? normalizeProvinceName(dealerProvinceRaw)
+: normalizeProvinceName(profileProvinceRaw);
 
 const socialLinks = {};
 
@@ -2051,8 +2474,23 @@ email,
 password,
 
 options:{
+
+/* PHASE 3 — explicit base-path-aware email verification landing.
+   emailRedirectTo: appUrl("/dashboard") resolves via the existing
+   base-path helper to the dashboard under the local development root
+   and under the deployment base on GitHub Pages.
+   Same existing appUrl() mechanism as forgot-password
+   (appUrl("/reset-password")). No hardcoded origin, no hardcoded
+   deployment prefix. All signup metadata below unchanged. */
+emailRedirectTo: appUrl("/dashboard"),
+
 data:{
 
+/* PHASE 4 — canonical name key. readMeta() prefers first_name, then
+   name. Signup now sends BOTH so INSERT and backfill populate
+   profiles.first_name even when the server echoes a subset of keys.
+   Surname already matches (surname). */
+first_name: name,
 name,
 surname,
 
@@ -2129,9 +2567,12 @@ city:
 document.getElementById("profileCity")?.value.trim() || null,
 
 province:
-account_type === "dealer"
-? dealerProvince || null
-: document.getElementById("profileProvince")?.value || null,
+
+    /* PHASE 2 FIX — ONE validated canonical province value.
+       Dealer accounts use #dealerProvince, private accounts use
+       #profileProvince (normalized above). Invalid/blank stays
+       null. Never two columns; never bypasses DB protection. */
+    province || null,
 
 website:
 document.getElementById("profileWebsite")?.value.trim() || null,
@@ -2160,6 +2601,17 @@ const user =
 data?.user;
 
 if(!user){
+
+/* PHASE 2 FIX — no user object means signup did NOT
+   succeed: keep the saved NON-SENSITIVE draft so the
+   user can correct the problem without starting over.
+   savePageState() here only writes the allowlisted
+   fields from collectSignupDraft() — passwords are
+   never included. */
+savePageState(
+SIGNUP_DRAFT_KEY,
+collectSignupDraft()
+);
 
 toast("Account created. Check your email.");
 resetBtn();
@@ -2266,9 +2718,18 @@ error:profileError
 .insert(...);
 */
 
-/* SUCCESS */
+/* SUCCESS — PHASE 2: present a clean same-route confirmation state.
+   Replaces the WHOLE signup content region (#signupContent) instead of
+   only #signupForm.innerHTML, so no header, form fields, dealer/launch
+   controls, orphan Create Account button or terms remain visible or
+   focusable underneath. Same emerald panel + HUFA language, no redesign.
+   No routing, no URL change, no auth/data-mapping change. */
+clearSignupDraft(form);
 
-document.getElementById("signupForm").innerHTML = `
+const signupContent =
+document.getElementById("signupContent");
+
+const successHtml = `
 
 <div class="
 rounded-[28px]
@@ -2279,11 +2740,15 @@ p-8
 text-center
 ">
 
-<h2 class="
+<h2
+id="signupSuccessHeading"
+tabindex="-1"
+class="
 text-2xl
 font-black
 text-emerald-700
 mb-3
+outline-none
 ">
 Check Your Email
 </h2>
@@ -2300,6 +2765,34 @@ Please verify your email before logging in.
 </div>
 
 `;
+
+if(signupContent){
+
+signupContent.innerHTML = successHtml;
+
+}else{
+
+document.getElementById("signupForm").innerHTML = successHtml;
+
+}
+
+/* Position the fresh confirmation state at the top and move keyboard
+   focus to its heading. Runs synchronously after the success DOM exists
+   (same scroll pattern as navigate()), so the welcome overlay lifts to
+   reveal the panel at the top on every viewport. */
+window.scrollTo({
+top: 0,
+behavior: "auto"
+});
+
+const successHeading =
+document.getElementById("signupSuccessHeading");
+
+if(successHeading && typeof successHeading.focus === "function"){
+
+successHeading.focus({ preventScroll: true });
+
+}
 
 /* POST-SIGNUP WELCOME — shown only after the account
    was genuinely created. The full-screen /assets/welcome.png

@@ -4,9 +4,32 @@ const PLACEHOLDER = asset("/placeholder.png");
 
 import {
   supabase,
-  getAuthUser
+  getAuthUser,
+  getUserProfile
 } from "../js/api.js";
 import { navigate } from "../js/router.js";
+import {
+  getActiveListLimit,
+  getFeaturedLimit
+} from "./dashboard.js";
+
+/* =========================================
+   PHASE 5 — INVENTORY USAGE / REMAINING COUNTS
+   Authoritative sources (no new source of truth):
+   - Vehicles uploaded / featured used: the Inventory page's own
+     scoped result (vehicles.seller_id = auth.uid(), no extra
+     status filter — deleted rows are hard-deleted, so every
+     returned row is the same inventory rendered below).
+   - Vehicle limit: existing getActiveListLimit() package helper
+     (Launch Promotion dealer 50 / private 5; legacy = Infinity).
+   - Featured limit: existing getFeaturedLimit() package helper
+     (Launch Promotion dealer 15 / private 2; legacy map kept).
+   - Featured detection: existing vehicles.is_featured boolean
+     (same field rendered as the "Featured" badge on each card).
+   Remaining values are clamped with Math.max(0, limit - used)
+   so historical over-limit data shows 0, never negative.
+   Infinity (legacy unlimited packages) renders as "Unlimited".
+   ========================================= */
 
 export function MyVehiclesPage(){
 
@@ -80,6 +103,123 @@ Add Vehicle
 </button>
 
 </div>
+
+<!-- PHASE 5 — INVENTORY USAGE: derived from the same scoped
+     inventory result rendered below (no duplicate query).
+     Skeleton placeholders mirror .dashboard-kpi-card language
+     so no misleading zeroes show while data loads. -->
+<section
+id="inventoryUsage"
+aria-label="Inventory usage"
+class="
+mb-10
+rounded-[28px]
+bg-white/80
+backdrop-blur-[26px]
+border
+border-white/50
+shadow-[0_25px_70px_rgba(15,23,42,0.08)]
+p-6
+md:p-8
+"
+>
+
+<div class="
+flex
+flex-col
+sm:flex-row
+sm:items-center
+sm:justify-between
+gap-2
+mb-6
+">
+
+<div>
+<p class="
+uppercase
+tracking-[0.18em]
+text-[11px]
+font-black
+text-[#C6A75D]
+mb-2
+">
+Inventory Usage
+</p>
+
+<h2 class="
+text-2xl
+md:text-3xl
+font-black
+tracking-[-0.03em]
+text-[#08111F]
+leading-none
+">
+Package Limits
+</h2>
+</div>
+
+<p
+id="inventoryUsagePlan"
+class="
+text-[12px]
+font-bold
+uppercase
+tracking-[0.14em]
+text-[#64748B]
+">
+Loading limits…
+</p>
+
+</div>
+
+<div class="
+grid
+grid-cols-2
+xl:grid-cols-4
+gap-4
+lg:gap-6
+items-stretch
+">
+
+<div class="
+dashboard-kpi-card
+!rounded-[20px]
+">
+<div class="dashboard-kpi-label">Vehicles Uploaded</div>
+<p id="invUploaded" class="dashboard-kpi-number"><span class="skeleton-shimmer inline-block h-8 w-16 rounded-md"></span></p>
+<div id="invUploadedSub" class="dashboard-kpi-sub">Counting your inventory…</div>
+</div>
+
+<div class="
+dashboard-kpi-card
+!rounded-[20px]
+">
+<div class="dashboard-kpi-label">Vehicles Remaining</div>
+<p id="invRemaining" class="dashboard-kpi-number"><span class="skeleton-shimmer inline-block h-8 w-16 rounded-md"></span></p>
+<div id="invRemainingSub" class="dashboard-kpi-sub">Checking your package…</div>
+</div>
+
+<div class="
+dashboard-kpi-card
+!rounded-[20px]
+">
+<div class="dashboard-kpi-label">Featured Used</div>
+<p id="invFeatUsed" class="dashboard-kpi-number"><span class="skeleton-shimmer inline-block h-8 w-16 rounded-md"></span></p>
+<div id="invFeatUsedSub" class="dashboard-kpi-sub">Counting featured listings…</div>
+</div>
+
+<div class="
+dashboard-kpi-card
+!rounded-[20px]
+">
+<div class="dashboard-kpi-label">Featured Remaining</div>
+<p id="invFeatRemaining" class="dashboard-kpi-number"><span class="skeleton-shimmer inline-block h-8 w-16 rounded-md"></span></p>
+<div id="invFeatRemainingSub" class="dashboard-kpi-sub">Checking your package…</div>
+</div>
+
+</div>
+
+</section>
 
 <div
 id="vehicleList"
@@ -258,6 +398,8 @@ shadow-[0_20px_60px_rgba(15,23,42,0.05)]
 
 `;
 
+await renderInventoryUsage(data || []);
+
 return;
 
 }
@@ -268,6 +410,150 @@ data.forEach(v => {
 list.innerHTML += card(v);
 
 });
+
+await renderInventoryUsage(data || []);
+
+}
+
+
+/* =========================================
+   PHASE 5 — renderInventoryUsage(vehicles)
+   Reuses the vehicles array already loaded by loadVehicles()
+   (same seller_id-scoped result rendered below) — no duplicate
+   inventory query. Limits come from the existing dashboard
+   package helpers. Missing DOM (user navigated away) exits
+   silently. No auth tokens / profile data logged.
+   ========================================= */
+
+async function renderInventoryUsage(vehicles){
+
+const uploadedEl =
+document.getElementById("invUploaded");
+
+const remainingEl =
+document.getElementById("invRemaining");
+
+const featUsedEl =
+document.getElementById("invFeatUsed");
+
+const featRemainingEl =
+document.getElementById("invFeatRemaining");
+
+/* Page changed before data arrived — nothing to update. */
+if(
+!uploadedEl ||
+!remainingEl ||
+!featUsedEl ||
+!featRemainingEl
+){
+return;
+}
+
+const rows =
+Array.isArray(vehicles)
+? vehicles
+: [];
+
+const uploaded =
+rows.length;
+
+const featuredUsed =
+rows.filter(v => v && v.is_featured === true).length;
+
+let vehicleLimit = Infinity;
+let featuredLimit = 0;
+let planLabel = "";
+
+try{
+
+const [activeLimit, featLimit] =
+await Promise.all([
+getActiveListLimit(),
+getFeaturedLimit()
+]);
+
+vehicleLimit = activeLimit;
+featuredLimit = featLimit;
+
+const profile =
+await getUserProfile();
+
+const isDealer =
+profile?.account_type === "dealer";
+
+planLabel =
+isDealer ? "Dealership" : "Private Seller";
+
+}catch(err){
+
+console.error(
+"Inventory usage limits failed",
+err?.message || err
+);
+
+}
+
+const vehiclesRemainingText =
+vehicleLimit === Infinity
+? "Unlimited"
+: String(Math.max(0, vehicleLimit - uploaded));
+
+const featuredRemainingText =
+featuredLimit === Infinity
+? "Unlimited"
+: String(Math.max(0, featuredLimit - featuredUsed));
+
+uploadedEl.textContent = String(uploaded);
+remainingEl.textContent = vehiclesRemainingText;
+featUsedEl.textContent = String(featuredUsed);
+featRemainingEl.textContent = featuredRemainingText;
+
+setTextIfPresent(
+"invUploadedSub",
+vehicleLimit === Infinity
+? "Total listings in your inventory"
+: `of ${vehicleLimit} included listings`
+);
+
+setTextIfPresent(
+"invRemainingSub",
+vehicleLimit === Infinity
+? "Your package has no vehicle cap"
+: "slots left on your package"
+);
+
+setTextIfPresent(
+"invFeatUsedSub",
+featuredLimit === Infinity
+? "Total featured in your inventory"
+: `of ${featuredLimit} included featured`
+);
+
+setTextIfPresent(
+"invFeatRemainingSub",
+featuredLimit === Infinity
+? "Your package has no featured cap"
+: "featured slots left"
+);
+
+setTextIfPresent(
+"inventoryUsagePlan",
+planLabel
+? `${planLabel} · Launch Promotion`
+: "Launch Promotion"
+);
+
+}
+
+
+function setTextIfPresent(id, text){
+
+const el =
+document.getElementById(id);
+
+if(el){
+el.textContent = text;
+}
 
 }
 

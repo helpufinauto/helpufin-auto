@@ -109,7 +109,18 @@ if(hash.includes("access_token")){
   if(data.session){
 
     // 🔥 ONLY redirect IF user is on login page
-    if(stripBase(window.location.pathname) === "/login"){
+    // PHASE 3 — signup verification uses emailRedirectTo appUrl dashboard,
+    // so fresh links land on protected dashboard route where router guard and
+    // MFA gate apply normally. If Supabase falls back to Site URL root, a
+    // signup verification hash on root is forwarded ONCE to dashboard.
+    // Hash-gated plus boot-only with hash cleared below, so no loop and no
+    // repeat navigation on later auth events. Recovery, MFA, admin untouched.
+    const logicalPath = stripBase(window.location.pathname);
+
+    if(
+      logicalPath === "/login" ||
+      (type === "signup" && logicalPath === "/")
+    ){
       navigate("/dashboard");
     }
 
